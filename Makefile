@@ -54,7 +54,7 @@ VPP_OPTS = --target hw
 CLIENT_SOURCES = Client/client.cpp
 CLIENT_EXE = client
 
-SERVER_SOURCES = Server/encoder.cpp Server/server.cpp
+SERVER_SOURCES = Server/encoder.cpp Server/server.cpp SHA_algorithm/SHA256.cpp
 SERVER_OBJECTS =$(SERVER_SOURCES:.cpp=.o)
 SERVER_EXE = encoder
 
@@ -74,10 +74,10 @@ DECODER_EXE = decoder
 all: $(CLIENT_EXE) $(SERVER_EXE) $(DECODER_EXE)
 
 $(CLIENT_EXE):
-	g++ -O3 $(CLIENT_SOURCES) -o "$@"
+	g++ -O3 $(CLIENT_SOURCES) -o "$@" 
 
 $(SERVER_EXE): $(SERVER_OBJECTS)
-	$(HOST_CXX) -o "$@" $(+) $(LDFLAGS)
+	$(HOST_CXX) -o "$@" $(+) $(LDFLAGS) 
 	# -@echo $(VPP) --package --config fpga/package.cfg --package.kernel_image $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/image/image.ub --package.rootfs $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/rootfs/rootfs.ext4 $(XCLBIN)
 	# -@$(VPP) --package --config fpga/package.cfg --package.sd_file "$@" --package.kernel_image $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/image/image.ub --package.rootfs $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/rootfs/rootfs.ext4 $(XCLBIN)
 
@@ -85,7 +85,7 @@ $(DECODER_EXE): $(DECODER_OBJECTS)
 	$(HOST_CXX) -o "$@" $(+) $(LDFLAGS)
 
 .cpp.o:
-	$(HOST_CXX) $(CXXFLAGS) -I./server -o "$@" "$<"
+	$(HOST_CXX) $(CXXFLAGS) -I./server -I./SHA_algorithm -o "$@" "$<"
 
 #
 # primary build targets
