@@ -67,7 +67,6 @@ int Deduplicate(std::vector<std::array<uint8_t,32>> &ChunkHashTable,std::array<u
 {
     
 	/*Brute force approach: false for a match and true for unique chunk encountered*/
-	
 	for(int ChunkIdx = 0;ChunkIdx < ChunkHashTable.size(); ChunkIdx++)
 	{
 		if(hash == ChunkHashTable[ChunkIdx])
@@ -79,9 +78,43 @@ int Deduplicate(std::vector<std::array<uint8_t,32>> &ChunkHashTable,std::array<u
 	return -1;
 }
 
-void ComputeLZW(std::vector<unsigned int> &ChunkLZW, uint8_t *Chunk,uint16_t ChunkLength)
+
+void ComputeLZW(vector <int> &output_code ,uint8_t *Chunk, uint16_t ChunkLength)
 {
-    
+    cout << "Encoding\n";
+    array<string,4096> table;
+    for (int i = 0; i <= 255; i++) {
+        string ch = "";
+        ch += char(i);
+        table[i] = ch;
+    }
+ 
+    string p = "", c = "";
+    p += Chunk[0];
+    int code = 256;
+    // cout << "String\tOutput_Code\tAddition\n";
+    for (int i = 0; i < ChunkLength; i++) {
+        if (i != ChunkLength - 1)
+            c += Chunk[i + 1];
+        int pos = find(table,p+c);
+        if(-1 != pos)
+        {
+            p = p + c;
+        }
+        else {
+            int output_code_value = find(table,p);
+            // cout << p << "\t" << output_code_value << "\t\t"
+                //  << p + c << "\t" << code << endl;
+            output_code.push_back(output_code_value);
+            table[code] = p + c;
+            code++;
+            p = c;
+        }
+        c = "";
+    }
+    int output_code_value = find(table,p);
+    // cout << p << "\t" << output_code_value << endl;
+    output_code.push_back(output_code_value);
 }
 
 #endif
