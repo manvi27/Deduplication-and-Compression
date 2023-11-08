@@ -1,177 +1,301 @@
-#include "SHA256.h"
-#include <cstring>
-#include <sstream>
-#include <iomanip>
-#include <iostream>
-/*Reference
-// #include <iostream>
-// #include <chrono>
-// #include <ctime>
-// #include "SHA256.h"
+/* sha256-arm.c - ARMv8 SHA extensions using C intrinsics     */
+/*   Written and placed in public domain by Jeffrey Walton    */
+/*   Based on code from ARM, and by Johannes Schneiders, Skip */
+/*   Hovsmith and Barry O'Rourke for the mbedTLS project.     */
 
-// int main(int argc, char ** argv) {
+/* For some reason we need to use the C++ compiler. Otherwise       */
+/* all the intrinsics functions, like vsha256hq_u32, are missing.   */
+/* GCC118 on the compile farm with GCC 4.8.5 suffers the issue.     */
+/* g++ -DTEST_MAIN -march=armv8-a+crypto sha256-arm.c -o sha256.exe */
 
-// 	for(int i = 1 ; i < argc ; i++) {
-// 		SHA256 sha;
-// 		sha.update(argv[i]);
-// 		std::array<uint8_t, 32> digest = sha.digest();
+/* Visual Studio 2017 and above supports ARMv8, but its not clear how to detect */
+/* it or use it at the moment. Also see http://stackoverflow.com/q/37244202,    */
+/* http://stackoverflow.com/q/41646026, and http://stackoverflow.com/q/41688101 */
+#if defined(__arm__) || defined(__aarch32__) || defined(__arm64__) || defined(__aarch64__) || defined(_M_ARM)
+# if defined(__GNUC__)
+#  include <stdint.h>
+#  include <iostream>
+#  include <stdio.h>
+#  include <unordered_map>
+#  include "../Dedup/Dedup.h"
+# endif
+# if defined(__ARM_NEON) || defined(_MSC_VER) || defined(__GNUC__)
+#  include <arm_neon.h>
+# endif
+/* GCC and LLVM Clang, but not Apple Clang */
+# if defined(__GNUC__) && !defined(__apple_build_version__)
+#  if defined(__ARM_ACLE) || defined(__ARM_FEATURE_CRYPTO)
+#   include <arm_acle.h>
+#  endif
+# endif
+#endif  /* ARM Headers */
 
-// 		std::cout << SHA256::toString(digest) << std::endl;
-// 	}
+static const uint32_t K[] =
+{
+    0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
+    0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
+    0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3,
+    0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
+    0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC,
+    0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
+    0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7,
+    0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
+    0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13,
+    0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
+    0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3,
+    0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
+    0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5,
+    0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
+    0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208,
+    0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2,
+};
 
-// 	return EXIT_SUCCESS;
-// }
+static uint32_t tableSize = 0;
 
+/* Process multiple blocks. The caller is responsible for setting the initial */
+/*  state, and the caller is responsible for padding the final block.        */
+void sha256_process_arm(uint32_t state[8], const uint8_t data[], uint32_t length)
+{
+    uint32x4_t STATE0, STATE1, ABEF_SAVE, CDGH_SAVE;
+    uint32x4_t MSG0, MSG1, MSG2, MSG3;
+    uint32x4_t TMP0, TMP1, TMP2;
 
+    /* Load state */
+    STATE0 = vld1q_u32(&state[0]);
+    STATE1 = vld1q_u32(&state[4]);
 
+    while (length >= 64)
+    {
+        /* Save state */
+        ABEF_SAVE = STATE0;
+        CDGH_SAVE = STATE1;
 
+        /* Load message */
+        MSG0 = vld1q_u32((const uint32_t *)(data +  0));
+        MSG1 = vld1q_u32((const uint32_t *)(data + 16));
+        MSG2 = vld1q_u32((const uint32_t *)(data + 32));
+        MSG3 = vld1q_u32((const uint32_t *)(data + 48));
+
+        /* Reverse for little endian */
+        MSG0 = vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(MSG0)));
+        MSG1 = vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(MSG1)));
+        MSG2 = vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(MSG2)));
+        MSG3 = vreinterpretq_u32_u8(vrev32q_u8(vreinterpretq_u8_u32(MSG3)));
+
+        TMP0 = vaddq_u32(MSG0, vld1q_u32(&K[0x00]));
+
+        /* Rounds 0-3 */
+        MSG0 = vsha256su0q_u32(MSG0, MSG1);
+        TMP2 = STATE0;
+        TMP1 = vaddq_u32(MSG1, vld1q_u32(&K[0x04]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP0);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP0);
+        MSG0 = vsha256su1q_u32(MSG0, MSG2, MSG3);
+
+        /* Rounds 4-7 */
+        MSG1 = vsha256su0q_u32(MSG1, MSG2);
+        TMP2 = STATE0;
+        TMP0 = vaddq_u32(MSG2, vld1q_u32(&K[0x08]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP1);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP1);
+        MSG1 = vsha256su1q_u32(MSG1, MSG3, MSG0);
+
+        /* Rounds 8-11 */
+        MSG2 = vsha256su0q_u32(MSG2, MSG3);
+        TMP2 = STATE0;
+        TMP1 = vaddq_u32(MSG3, vld1q_u32(&K[0x0c]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP0);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP0);
+        MSG2 = vsha256su1q_u32(MSG2, MSG0, MSG1);
+
+        /* Rounds 12-15 */
+        MSG3 = vsha256su0q_u32(MSG3, MSG0);
+        TMP2 = STATE0;
+        TMP0 = vaddq_u32(MSG0, vld1q_u32(&K[0x10]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP1);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP1);
+        MSG3 = vsha256su1q_u32(MSG3, MSG1, MSG2);
+
+        /* Rounds 16-19 */
+        MSG0 = vsha256su0q_u32(MSG0, MSG1);
+        TMP2 = STATE0;
+        TMP1 = vaddq_u32(MSG1, vld1q_u32(&K[0x14]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP0);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP0);
+        MSG0 = vsha256su1q_u32(MSG0, MSG2, MSG3);
+
+        /* Rounds 20-23 */
+        MSG1 = vsha256su0q_u32(MSG1, MSG2);
+        TMP2 = STATE0;
+        TMP0 = vaddq_u32(MSG2, vld1q_u32(&K[0x18]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP1);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP1);
+        MSG1 = vsha256su1q_u32(MSG1, MSG3, MSG0);
+
+        /* Rounds 24-27 */
+        MSG2 = vsha256su0q_u32(MSG2, MSG3);
+        TMP2 = STATE0;
+        TMP1 = vaddq_u32(MSG3, vld1q_u32(&K[0x1c]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP0);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP0);
+        MSG2 = vsha256su1q_u32(MSG2, MSG0, MSG1);
+
+        /* Rounds 28-31 */
+        MSG3 = vsha256su0q_u32(MSG3, MSG0);
+        TMP2 = STATE0;
+        TMP0 = vaddq_u32(MSG0, vld1q_u32(&K[0x20]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP1);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP1);
+        MSG3 = vsha256su1q_u32(MSG3, MSG1, MSG2);
+
+        /* Rounds 32-35 */
+        MSG0 = vsha256su0q_u32(MSG0, MSG1);
+        TMP2 = STATE0;
+        TMP1 = vaddq_u32(MSG1, vld1q_u32(&K[0x24]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP0);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP0);
+        MSG0 = vsha256su1q_u32(MSG0, MSG2, MSG3);
+
+        /* Rounds 36-39 */
+        MSG1 = vsha256su0q_u32(MSG1, MSG2);
+        TMP2 = STATE0;
+        TMP0 = vaddq_u32(MSG2, vld1q_u32(&K[0x28]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP1);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP1);
+        MSG1 = vsha256su1q_u32(MSG1, MSG3, MSG0);
+
+        /* Rounds 40-43 */
+        MSG2 = vsha256su0q_u32(MSG2, MSG3);
+        TMP2 = STATE0;
+        TMP1 = vaddq_u32(MSG3, vld1q_u32(&K[0x2c]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP0);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP0);
+        MSG2 = vsha256su1q_u32(MSG2, MSG0, MSG1);
+
+        /* Rounds 44-47 */
+        MSG3 = vsha256su0q_u32(MSG3, MSG0);
+        TMP2 = STATE0;
+        TMP0 = vaddq_u32(MSG0, vld1q_u32(&K[0x30]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP1);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP1);
+        MSG3 = vsha256su1q_u32(MSG3, MSG1, MSG2);
+
+        /* Rounds 48-51 */
+        TMP2 = STATE0;
+        TMP1 = vaddq_u32(MSG1, vld1q_u32(&K[0x34]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP0);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP0);
+
+        /* Rounds 52-55 */
+        TMP2 = STATE0;
+        TMP0 = vaddq_u32(MSG2, vld1q_u32(&K[0x38]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP1);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP1);
+
+        /* Rounds 56-59 */
+        TMP2 = STATE0;
+        TMP1 = vaddq_u32(MSG3, vld1q_u32(&K[0x3c]));
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP0);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP0);
+
+        /* Rounds 60-63 */
+        TMP2 = STATE0;
+        STATE0 = vsha256hq_u32(STATE0, STATE1, TMP1);
+        STATE1 = vsha256h2q_u32(STATE1, TMP2, TMP1);
+
+        /* Combine state */
+        STATE0 = vaddq_u32(STATE0, ABEF_SAVE);
+        STATE1 = vaddq_u32(STATE1, CDGH_SAVE);
+
+        data += 64;
+        length -= 64;
+    }
+
+    /* Save state */
+    vst1q_u32(&state[0], STATE0);
+    vst1q_u32(&state[4], STATE1);
+}
+
+bool runSHA(const uint8_t data[], uint32_t length)
+{
+	/* initial state */
+    uint32_t state[8] = {
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+        0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+    };
+
+	sha256_process_arm(state, data, length);
+	char hashData[32];
+	for(size_t i = 0; i < 8; ++i) {
+		hashData[i] = (char) (state[i] >> 24);
+		hashData[i] = (char) (state[i] >> 16);
+		hashData[i] = (char) (state[i] >> 8);
+		hashData[i] = (char) (state[i] >> 0);
+	}
+
+	std::unordered_map <std::string, int> dedupTable;
+	if(checkDedup(hashData, dedupTable, tableSize) >= 0)
+	{
+		tableSize++;
+		cout<<"Added chunck to table!!!!!";
+	}
+
+/*
+    int success = ((b1 == 0xE3) && (b2 == 0xB0) && (b3 == 0xC4) && (b4 == 0x42) &&
+                    (b5 == 0x98) && (b6 == 0xFC) && (b7 == 0x1C) && (b8 == 0x14));
+
+    if (success)
+        printf("Success!\n");
+    else
+        printf("Failure!\n");
+
+    return (success != 0 ? 0 : 1);
 */
-
-SHA256::SHA256(): m_blocklen(0), m_bitlen(0) {
-	m_state[0] = 0x6a09e667;
-	m_state[1] = 0xbb67ae85;
-	m_state[2] = 0x3c6ef372;
-	m_state[3] = 0xa54ff53a;
-	m_state[4] = 0x510e527f;
-	m_state[5] = 0x9b05688c;
-	m_state[6] = 0x1f83d9ab;
-	m_state[7] = 0x5be0cd19;
+	return true;
 }
 
-void SHA256::update(const uint8_t * data, size_t length) {
-	for (size_t i = 0 ; i < length ; i++) {
-		m_data[m_blocklen++] = data[i];
-		if (m_blocklen == 64) {
-			transform();
+#if defined(TEST_MAIN)
 
-			// End of the block
-			m_bitlen += 512;
-			m_blocklen = 0;
-		}
-	}
+#include <stdio.h>
+#include <string.h>
+int main(int argc, char* argv[])
+{
+    /* empty message with padding */
+    uint8_t message[64];
+    memset(message, 0x00, sizeof(message));
+    message[0] = 0x80;
+
+    /* initial state */
+    uint32_t state[8] = {
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+        0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+    };
+
+    sha256_process_arm(state, message, sizeof(message));
+
+    const uint8_t b1 = (uint8_t)(state[0] >> 24);
+    const uint8_t b2 = (uint8_t)(state[0] >> 16);
+    const uint8_t b3 = (uint8_t)(state[0] >>  8);
+    const uint8_t b4 = (uint8_t)(state[0] >>  0);
+    const uint8_t b5 = (uint8_t)(state[1] >> 24);
+    const uint8_t b6 = (uint8_t)(state[1] >> 16);
+    const uint8_t b7 = (uint8_t)(state[1] >>  8);
+    const uint8_t b8 = (uint8_t)(state[1] >>  0);
+
+    /* e3b0c44298fc1c14... */
+    printf("SHA256 hash of empty message: ");
+    printf("%02X%02X%02X%02X%02X%02X%02X%02X...\n",
+        b1, b2, b3, b4, b5, b6, b7, b8);
+
+    int success = ((b1 == 0xE3) && (b2 == 0xB0) && (b3 == 0xC4) && (b4 == 0x42) &&
+                    (b5 == 0x98) && (b6 == 0xFC) && (b7 == 0x1C) && (b8 == 0x14));
+
+    if (success)
+        printf("Success!\n");
+    else
+        printf("Failure!\n");
+
+    return (success != 0 ? 0 : 1);
 }
 
-void SHA256::update(const std::string &data) {
-	update(reinterpret_cast<const uint8_t*> (data.c_str()), data.size());
-}
-
-std::array<uint8_t,32> SHA256::digest() {
-	std::array<uint8_t,32> hash;
-
-	pad();
-	revert(hash);
-
-	return hash;
-}
-
-uint32_t SHA256::rotr(uint32_t x, uint32_t n) {
-	return (x >> n) | (x << (32 - n));
-}
-
-uint32_t SHA256::choose(uint32_t e, uint32_t f, uint32_t g) {
-	return (e & f) ^ (~e & g);
-}
-
-uint32_t SHA256::majority(uint32_t a, uint32_t b, uint32_t c) {
-	return (a & (b | c)) | (b & c);
-}
-
-uint32_t SHA256::sig0(uint32_t x) {
-	return SHA256::rotr(x, 7) ^ SHA256::rotr(x, 18) ^ (x >> 3);
-}
-
-uint32_t SHA256::sig1(uint32_t x) {
-	return SHA256::rotr(x, 17) ^ SHA256::rotr(x, 19) ^ (x >> 10);
-}
-
-void SHA256::transform() {
-	uint32_t maj, xorA, ch, xorE, sum, newA, newE, m[64];
-	uint32_t state[8];
-
-	for (uint8_t i = 0, j = 0; i < 16; i++, j += 4) { // Split data in 32 bit blocks for the 16 first words
-		m[i] = (m_data[j] << 24) | (m_data[j + 1] << 16) | (m_data[j + 2] << 8) | (m_data[j + 3]);
-	}
-
-	for (uint8_t k = 16 ; k < 64; k++) { // Remaining 48 blocks
-		m[k] = SHA256::sig1(m[k - 2]) + m[k - 7] + SHA256::sig0(m[k - 15]) + m[k - 16];
-	}
-
-	for(uint8_t i = 0 ; i < 8 ; i++) {
-		state[i] = m_state[i];
-	}
-
-	for (uint8_t i = 0; i < 64; i++) {
-		maj   = SHA256::majority(state[0], state[1], state[2]);
-		xorA  = SHA256::rotr(state[0], 2) ^ SHA256::rotr(state[0], 13) ^ SHA256::rotr(state[0], 22);
-
-		ch = choose(state[4], state[5], state[6]);
-
-		xorE  = SHA256::rotr(state[4], 6) ^ SHA256::rotr(state[4], 11) ^ SHA256::rotr(state[4], 25);
-
-		sum  = m[i] + K[i] + state[7] + ch + xorE;
-		newA = xorA + maj + sum;
-		newE = state[3] + sum;
-
-		state[7] = state[6];
-		state[6] = state[5];
-		state[5] = state[4];
-		state[4] = newE;
-		state[3] = state[2];
-		state[2] = state[1];
-		state[1] = state[0];
-		state[0] = newA;
-	}
-
-	for(uint8_t i = 0 ; i < 8 ; i++) {
-		m_state[i] += state[i];
-	}
-}
-
-void SHA256::pad() {
-
-	uint64_t i = m_blocklen;
-	uint8_t end = m_blocklen < 56 ? 56 : 64;
-
-	m_data[i++] = 0x80; // Append a bit 1
-	while (i < end) {
-		m_data[i++] = 0x00; // Pad with zeros
-	}
-
-	if(m_blocklen >= 56) {
-		transform();
-		memset(m_data, 0, 56);
-	}
-
-	// Append to the padding the total message's length in bits and transform.
-	m_bitlen += m_blocklen * 8;
-	m_data[63] = m_bitlen;
-	m_data[62] = m_bitlen >> 8;
-	m_data[61] = m_bitlen >> 16;
-	m_data[60] = m_bitlen >> 24;
-	m_data[59] = m_bitlen >> 32;
-	m_data[58] = m_bitlen >> 40;
-	m_data[57] = m_bitlen >> 48;
-	m_data[56] = m_bitlen >> 56;
-	transform();
-}
-
-void SHA256::revert(std::array<uint8_t, 32> & hash) {
-	// SHA uses big endian byte ordering
-	// Revert all bytes
-	for (uint8_t i = 0 ; i < 4 ; i++) {
-		for(uint8_t j = 0 ; j < 8 ; j++) {
-			hash[i + (j * 4)] = (m_state[j] >> (24 - i * 8)) & 0x000000ff;
-		}
-	}
-}
-
-std::string SHA256::toString(const std::array<uint8_t, 32> & digest) {
-	std::stringstream s;
-	s << std::setfill('0') << std::hex;
-
-	for(uint8_t i = 0 ; i < 32 ; i++) {
-		s << std::setw(2) << (unsigned int) digest[i];
-	}
-
-	return s.str();
-}
+#endif

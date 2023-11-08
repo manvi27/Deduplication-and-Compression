@@ -10,6 +10,8 @@
 #include <fstream>
 #include <vector>
 #include <math.h>
+#include "../SHA_algorithm/SHA256.h"
+
 using namespace std;
 
 #define WIN_SIZE 16
@@ -73,7 +75,9 @@ int main()
             for(int i = 0; i < ChunkBoundary.size() - 1; i++)
             {
                 /*reference for using chunks */
-                cout <<input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]);
+                //cout <<input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]);
+                runSHA(input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
+                        sizeof(input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i])));
             }
 			if(false == fin.eof())
             {  
