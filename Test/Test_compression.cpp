@@ -34,13 +34,13 @@ void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_siz
 	// put your cdc implementation here
     uint32_t i;
 	unsigned int ChunkCount = 0;
-	printf("buff length passed = %d\n",buff_size);
+    // printf("buff length passed = %d\n",buff_size);
 
 	for(i = WIN_SIZE; i < buff_size - WIN_SIZE; i++)
 	{
 		if((hash_func(buff,i)%MODULUS) == 0)
         {
-			printf("chunk boundary at%d\n",i);
+			// printf("chunk boundary at%d\n",i);
 			ChunkBoundary.push_back(i);
 		}
 	} 
@@ -57,28 +57,39 @@ int main()
     string input_buffer = "";
     vector<unsigned int> ChunkBoundary;
     int pos = 0;
+    /*read char by char till end of file*/
     while(false == fin.eof())
     {
         input_buffer += fin.get();
-        // cout<<input_buffer.length()<<endl;
+        /*Since file size is 14247, I've taken buffer size as 8096 which is the amount
+        of data to be collected before passing it to cdc*/
         if((input_buffer.length() >= 8096) || (true == fin.eof()))
         {
-		    pos = input_buffer.length() ;
-            cout << "input buffer = "<<input_buffer << endl;
-            printf("pos before chunking = %d\n",pos);
+		    pos = input_buffer.length();
+            /*For ease of use, push 0 to vector because cdc function takes starting address
+            of the buffer and buffer length*/
+            ChunkBoundary.push_back(0);
 			cdc(ChunkBoundary, input_buffer ,pos );
-			if(false == fin.eof())
+            for(int i = 0; i < ChunkBoundary.size() - 1; i++)
             {
+                /*reference for using chunks */
+                cout <<input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]);
+            }
+			if(false == fin.eof())
+            {  
+                /*If not eof, update pos to accomodate remaining characters of current buffer
+                for next chunking operation*/
                 pos = pos - ChunkBoundary[ChunkBoundary.size() - 1];
-                printf("pos after chunking = %d\n",pos);
-            
 			    input_buffer = input_buffer.substr(ChunkBoundary[ChunkBoundary.size() - 1],pos);
-            
-                cout << input_buffer.length()<<endl;
+                /*Clear vector after using chunks and buffer for performing SHA and LZW
+                This can be different in final implementation. We may want to save chunking
+                vector longer*/
+                ChunkBoundary.clear();
             }
         }
     }
+    /*Last chunk */
+    cout<<input_buffer.substr(ChunkBoundary[ChunkBoundary.size()-1], input_buffer.length()-ChunkBoundary[ChunkBoundary.size()-1]);
     fin.close();
     return 0;
-    
 }
