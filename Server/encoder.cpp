@@ -59,7 +59,7 @@ void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_siz
 {
 	// put your cdc implementation here
     uint64_t i;
-	unsigned int ChunkCount = 0;
+	//unsigned int ChunkCount = 0;
 	printf("buff length passed = %d\n",buff_size);
 
 	for(i = WIN_SIZE; i < buff_size - WIN_SIZE; i++)
@@ -94,6 +94,7 @@ void handle_input(int argc, char* argv[], int* blocksize) {
 
 int main(int argc, char* argv[]) {
 	stopwatch ethernet_timer;
+	printf("Let's gooo\n");
 	unsigned char* input[NUM_PACKETS];
 	int writer = 0;
 	int done = 0;
@@ -111,6 +112,7 @@ int main(int argc, char* argv[]) {
 	if (file == NULL) {
 		printf("help\n");
 	}
+	printf("help cleared \n");
 
 	for (int i = 0; i < NUM_PACKETS; i++) {
 		input[i] = (unsigned char*) malloc(
@@ -120,13 +122,14 @@ int main(int argc, char* argv[]) {
 			return 1;
 		}
 	}
+	printf("Let's gooo x 2\n");
 
 	server.setup_server(blocksize);
 
 	writer = pipe_depth;
 	server.get_packet(input[writer]);
 	count++;
-
+	printf("Let's gooo x 3\n");
 	// get packet
 	unsigned char* buffer = input[writer];
 
@@ -134,6 +137,8 @@ int main(int argc, char* argv[]) {
 	done = buffer[1] & DONE_BIT_L;
 	length = buffer[0] | (buffer[1] << 8);
 	length &= ~DONE_BIT_H;
+
+	printf("Let's gooo x 4\n");
 #ifdef usr_code
     std::string input_buffer;
 	int pos = 0;
@@ -142,6 +147,7 @@ int main(int argc, char* argv[]) {
 	pos += length;
 	cout << input_buffer<< endl;
 #endif
+	printf("Let's gooo x 5\n");
 	// printing takes time so be weary of transfer rate
 	//printf("length: %d offset %d\n",length,offset);
 
@@ -151,7 +157,7 @@ int main(int argc, char* argv[]) {
 
 	offset += length;
 	writer++;
-
+	printf("Let's gooo x 6\n");
 	//last message
 	while (!done) {
 		// reset ring buffer
