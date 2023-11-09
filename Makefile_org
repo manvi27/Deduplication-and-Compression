@@ -54,29 +54,13 @@ VPP_OPTS = --target hw
 CLIENT_SOURCES = Client/client.cpp
 CLIENT_EXE = client
 
-SERVER_SOURCES = Server/encoder.cpp Server/server.cpp
+SERVER_SOURCES = Server/encoder.cpp Server/server.cpp SHA_algorithm/SHA256.cpp
 SERVER_OBJECTS =$(SERVER_SOURCES:.cpp=.o)
-SERVER_EXE = server
+SERVER_EXE = encoder
 
 DECODER_SOURCES = Decoder/Decoder.cpp
 DECODER_OBJECTS =$(DECODER_SOURCES:.cpp=.o)
 DECODER_EXE = decoder
-
-SHA_SOURCES = SHA_algorithm/SHA256.cpp SHA_algorithm/SHA256.h
-SHA_OBJECTS =$(SHA_SOURCES:.cpp=.o)
-SHA_EXE = sha
-
-DEDUP_SOURCES = Dedup/Dedup.cpp Dedup/Dedup.h
-DEDUP_OBJECTS =$(DEDUP_SOURCES:.cpp=.o)
-DEDUP_EXE = dedup
-
-TEST_SOURCES = Test_compression.cpp
-TEST_OBJECTS = Test.o #$(TEST_SOURCES: .cpp=.o)
-TEST_EXE = test
-
-ENCODER_SOURCES = $(SERVER_SOURCES) $(CDC_SOURCES) $(SHA_SOURCES) $(DEDUP_SOURCES) $(TEST_SOURCES)
-ENCODER_OBJECTS = $(ENCODER_SOURCES:.cpp=.o)
-ENCODER_EXE = encoder
 
 # CPU_SOURCES = cpu/Host.cpp ../../common/EventTimer.cpp ../../common/Utilities.cpp
 # CPU_OBJECTS=$(CPU_SOURCES:.cpp=.o)
@@ -87,12 +71,12 @@ ENCODER_EXE = encoder
 
 # $(CPU_EXE): $(CPU_OBJECTS)
 # 	$(HOST_CXX) -I./fpga/hls/ -o "$@" $(+) $(LDFLAGS)
-all: $(CLIENT_EXE) $(ENCODER_EXE) $(DECODER_EXE)
+all: $(CLIENT_EXE) $(SERVER_EXE) $(DECODER_EXE)
 
 $(CLIENT_EXE):
 	g++ -O3 $(CLIENT_SOURCES) -o "$@" 
 
-$(ENCODER_EXE): $(ENCODER_OBJECTS)
+$(SERVER_EXE): $(SERVER_OBJECTS)
 	$(HOST_CXX) -o "$@" $(+) $(LDFLAGS) 
 	# -@echo $(VPP) --package --config fpga/package.cfg --package.kernel_image $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/image/image.ub --package.rootfs $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/rootfs/rootfs.ext4 $(XCLBIN)
 	# -@$(VPP) --package --config fpga/package.cfg --package.sd_file "$@" --package.kernel_image $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/image/image.ub --package.rootfs $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/rootfs/rootfs.ext4 $(XCLBIN)
@@ -113,7 +97,7 @@ $(DECODER_EXE): $(DECODER_OBJECTS)
 .NOTPARALLEL: clean
 
 clean:
-	-$(RM) $(ENCODER_EXE) $(ENCODER_OBJECTS) $(DECODER_EXE) $(DECODER_OBJECTS) $(CLIENT_EXE)
+	-$(RM) $(SERVER_EXE) $(SERVER_OBJECTS) $(DECODER_EXE) $(DECODER_OBJECTS) $(CLIENT_EXE) 
 
 # clean-cpu:
 # 	-$(RM) $(CPU_EXE) $(CPU_OBJECTS) 
