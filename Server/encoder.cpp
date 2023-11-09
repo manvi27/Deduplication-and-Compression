@@ -35,11 +35,7 @@ unsigned char* file;
 
 std::unordered_map <string, int> dedupTable;
 
-// const int pow[16] ={
-// 	PRIME, 9,27, 81, 243,729,
-// 	2187, 6561, 19683, 59049, 177147,
-// 	531447, 1594323, 4782969, 14348907, 43046721
-// };
+
 uint64_t hash_func(string input, unsigned int pos)
 {
 	// put your hash function implementation here
@@ -183,19 +179,20 @@ int main(int argc, char* argv[]) {
 		pos += length; 
 		if((pos >= 8096)| (done))
 		{
-		    cout << input_buffer <<endl;
+		    //cout << input_buffer <<endl;
+			ChunkBoundary.push_back(0);
 			cdc(ChunkBoundary, input_buffer ,pos );
 			for(int i = 0; i < ChunkBoundary.size() - 1; i++)
             {
-                printf("Point5\n");
+                // printf("Point5\n");
                 /*reference for using chunks */
-                //cout <<input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]);
-                runSHA(dedupTable, input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
-                        sizeof(input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i])));
+                cout <<ChunkBoundary[i + 1] - ChunkBoundary[i]<<"\n";
+				runSHA(dedupTable, input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
+                        ChunkBoundary[i + 1] - ChunkBoundary[i]);
             }
 			if(true == done)
             {  
-                printf("Point6\n");
+                // printf("Point6\n");
                 /*If not eof, update pos to accomodate remaining characters of current buffer
                 for next chunking operation*/
                 pos = pos - ChunkBoundary[ChunkBoundary.size() - 1];

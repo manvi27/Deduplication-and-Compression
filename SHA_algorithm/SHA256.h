@@ -52,6 +52,6 @@ private:
 	void revert(std::array<uint8_t, 32> & hash);
 };
 
-void sha256_process_arm(uint32_t state[8], string data, uint32_t length);
+void sha256_process_arm(uint32_t *state, string data, uint32_t length);
 bool runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length);
 #endif

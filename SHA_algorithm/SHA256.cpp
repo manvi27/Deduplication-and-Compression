@@ -53,11 +53,12 @@ uint32_t B2U32(uint8_t val, uint8_t sh)
 
 /* Process multiple blocks. The caller is responsible for setting the initial */
 /*  state, and the caller is responsible for padding the final block.        */
-void sha256_process(uint32_t state[8], string data, uint32_t length)
+void sha256_process(uint32_t *state, string data, uint32_t length)
 {
     uint32_t a, b, c, d, e, f, g, h, s0, s1, T1, T2;
     uint32_t X[16], i;
-printf("SHAPoint1\n");
+printf("SHAPoint1");
+cout<<"--------------sha256process string"<<endl<<data<<endl<<"length = "<<length<<endl;
     size_t blocks = length / 64;
     while (blocks--)
     {
@@ -93,7 +94,7 @@ printf("SHAPoint1\n");
             b = a;
             a = T1 + T2;
         }
-
+        cout<<a<<" "<<b<<" "<<c<<" "<<d<<" "<<e<<" "<<f<<" "<<g<<" "<<h<<endl;
         for (; i < 64; i++)
         {
             s0 = X[(i + 1) & 0x0f];
@@ -113,6 +114,7 @@ printf("SHAPoint1\n");
             b = a;
             a = T1 + T2;
         }
+        cout<<a<<" "<<b<<" "<<c<<" "<<d<<" "<<e<<" "<<f<<" "<<g<<" "<<h<<endl;
 
         state[0] += a;
         state[1] += b;
@@ -123,6 +125,11 @@ printf("SHAPoint1\n");
         state[6] += g;
         state[7] += h;
     }
+    for(int i = 0;i < 8;i++)
+    {
+        printf("%x ",state[i]);
+    }
+    cout<<endl;
 }
 
 #if defined(TEST_MAIN)
@@ -178,23 +185,33 @@ bool runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t lengt
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     };
-printf("SHAPoint0\n");
+printf("SHAPoint0");
 	sha256_process(state, data, length);
 	char hashData[32];
 	for(size_t i = 0; i < 8; ++i) {
-		hashData[i] = (char) (state[i] >> 24);
-		hashData[i] = (char) (state[i] >> 16);
-		hashData[i] = (char) (state[i] >> 8);
-		hashData[i] = (char) (state[i] >> 0);
+		hashData[4*i + 0] = (char) (state[i] >> 24);
+		hashData[4*i+1] = (char) (state[i] >> 16);
+		hashData[4*i+2] = (char) (state[i] >> 8);
+		hashData[4*i+3] = (char) (state[i] >> 0);
 	}
-printf("SHAPoint2\n");
+printf("SHAPoint2");
+string xyz = "";
+     cout << data <<endl;
+    for(int i = 0; i < 32; ++i) {
+        xyz += hashData[i];
+        printf("%X ",hashData[i]);
+       // printf("0x%02X ", hashData[i]);
+        
+    }
+    //printf("%X\n",xyz);
 	//std::unordered_map <std::string, int> dedupTable;
-	if(checkDedup(hashData, dedupTable, TableSize) <= 0)
+	if(checkDedup(xyz, dedupTable, TableSize) < 0)
 	{
-        printf("SHAPoint4\n");
+        printf("SHAPoint4");
 		TableSize++;
 		cout<<"Added chunck to table!!!!!";
 	}
+    printf("Dedup table.size - %ld\n", dedupTable.size());
 
 	return true;
 }
