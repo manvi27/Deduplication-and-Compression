@@ -7,6 +7,6 @@
 
 using namespace std;
 
-int32_t checkDedup(char hash[], std::unordered_map <std::string, int> &dedupTable, uint32_t tableSize);
+int32_t checkDedup(string hash, std::unordered_map <std::string, int> &dedupTable, uint32_t tableSize);
 
 #endif //DEDUP_H

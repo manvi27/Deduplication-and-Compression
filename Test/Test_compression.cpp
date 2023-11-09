@@ -11,6 +11,7 @@
 #include <vector>
 #include <math.h>
 #include "../SHA_algorithm/SHA256.h"
+#include <unordered_map>
 
 using namespace std;
 
@@ -59,6 +60,7 @@ int main()
     string input_buffer = "";
     vector<unsigned int> ChunkBoundary;
     int pos = 0;
+    std::unordered_map <std::string, int> dedupTable;
     /*read char by char till end of file*/
     while(false == fin.eof())
     {
@@ -76,7 +78,7 @@ int main()
             {
                 /*reference for using chunks */
                 //cout <<input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]);
-                runSHA(input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
+                runSHA(dedupTable, input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
                         sizeof(input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i])));
             }
 			if(false == fin.eof())
