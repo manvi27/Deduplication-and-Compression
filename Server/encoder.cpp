@@ -13,24 +13,30 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include "stopwatch.h"
-
-
-
-//Check
-#include <math.h>
-#include <time.h>
 #include <vector>
-#include "SHA256.h"
-using namespace std;
-#define WIN_SIZE 16
-#define PRIME 3
-#define MODULUS 256
-#define TARGET 0
-
+#include <math.h>
+#define NUM_PACKETS 8
+#define pipe_depth 4
+#define DONE_BIT_L (1 << 7)
+#define DONE_BIT_H (1 << 15)
 #define usr_code
+using namespace std;
+int offset = 0;
+unsigned char* file;
 
 #ifdef usr_code
-uint64_t hash_func(unsigned char *input, unsigned int pos)
+
+#define WIN_SIZE 16
+#define PRIME 3
+#define MODULUS 1024
+#define TARGET 0
+
+// const int pow[16] ={
+// 	PRIME, 9,27, 81, 243,729,
+// 	2187, 6561, 19683, 59049, 177147,
+// 	531447, 1594323, 4782969, 14348907, 43046721
+// };
+uint64_t hash_func(string input, unsigned int pos)
 {
 	// put your hash function implementation here
 	/*
@@ -41,6 +47,7 @@ uint64_t hash_func(unsigned char *input, unsigned int pos)
 	*/
     uint64_t hash = 0;
 	uint8_t i = 0;
+
 	for(i = 0; i < WIN_SIZE; i++)
 	{
 		hash += input[pos+WIN_SIZE-1-i]*(pow(PRIME,i+1));
@@ -48,85 +55,25 @@ uint64_t hash_func(unsigned char *input, unsigned int pos)
 	return hash;
 }
 
-void cdc(vector<unsigned int> &ChunkBoundary, unsigned char *buff, unsigned int buff_size)
+void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_size)
 {
 	// put your cdc implementation here
     uint64_t i;
 	unsigned int ChunkCount = 0;
+	printf("buff length passed = %d\n",buff_size);
+
 	for(i = WIN_SIZE; i < buff_size - WIN_SIZE; i++)
 	{
 		if((hash_func(buff,i)%MODULUS) == 0)
         {
-			printf("%ld\n",i);
-			ChunkBoundary[ChunkCount++] = i;
+			printf("chunk boundary at%ld\n",i);
+			ChunkBoundary.push_back(i);
 		}
 	} 
 }
 
-int Deduplicate(std::vector<std::array<uint8_t,32>> &ChunkHashTable,std::array<uint8_t,32> hash)
-{
-    
-	/*Brute force approach: false for a match and true for unique chunk encountered*/
-	for(int ChunkIdx = 0;ChunkIdx < ChunkHashTable.size(); ChunkIdx++)
-	{
-		if(hash == ChunkHashTable[ChunkIdx])
-		{
-			return ChunkIdx;
-		}
-	}
-    ChunkHashTable.push_back(hash);
-	return -1;
-}
-
-
-void ComputeLZW(vector <int> &output_code ,uint8_t *Chunk, uint16_t ChunkLength)
-{
-    cout << "Encoding\n";
-    array<string,4096> table;
-    for (int i = 0; i <= 255; i++) {
-        string ch = "";
-        ch += char(i);
-        table[i] = ch;
-    }
- 
-    string p = "", c = "";
-    p += Chunk[0];
-    int code = 256;
-    // cout << "String\tOutput_Code\tAddition\n";
-    for (int i = 0; i < ChunkLength; i++) {
-        if (i != ChunkLength - 1)
-            c += Chunk[i + 1];
-        int pos = find(table,p+c);
-        if(-1 != pos)
-        {
-            p = p + c;
-        }
-        else {
-            int output_code_value = find(table,p);
-            // cout << p << "\t" << output_code_value << "\t\t"
-                //  << p + c << "\t" << code << endl;
-            output_code.push_back(output_code_value);
-            table[code] = p + c;
-            code++;
-            p = c;
-        }
-        c = "";
-    }
-    int output_code_value = find(table,p);
-    // cout << p << "\t" << output_code_value << endl;
-    output_code.push_back(output_code_value);
-}
 
 #endif
-
-//Original
-#define NUM_PACKETS 8
-#define pipe_depth 4
-#define DONE_BIT_L (1 << 7)
-#define DONE_BIT_H (1 << 15)
-
-int offset = 0;
-unsigned char* file;
 
 void handle_input(int argc, char* argv[], int* blocksize) {
 	int x;
@@ -174,7 +121,6 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	
 	server.setup_server(blocksize);
 
 	writer = pipe_depth;
@@ -185,33 +131,17 @@ int main(int argc, char* argv[]) {
 	unsigned char* buffer = input[writer];
 
 	// decode
-#ifdef usr_code
-	vector<unsigned int> ChunkBoundary[NUM_PACKETS];/*Stores chunk Id for NUM_PACKETS*/
-	std::vector<std::array<uint8_t, 32>> ChunkhashTbl;
-	/*Compute chunk boundaries on block rcvd*/
-	cdc(ChunkBoundary[writer],buffer,blocksize);
-    /*Perform SHA on subsequent chunks*/
-	for(int chunkIdx = 0;chunkIdx < ChunkBoundary[writer].size();chunkIdx++)
-	{
-	   SHA256 sha;
-	   int IsChunkUnique = -1;
-	   std::vector<unsigned int> ChunkLZW;
-	   sha.update(&buffer[ChunkBoundary[writer][chunkIdx]],ChunkBoundary[writer][chunkIdx + 1] - ChunkBoundary[writer][chunkIdx]);
-	   std::array<uint8_t,32> hash = sha.digest();
-       /*Deduplicate using look-up for SHA 256*/
-       IsChunkUnique = Deduplicate(ChunkhashTbl, hash);
-	   /*If IsChunkUnique == true, compute LZW else send Chunk Id */
-       if(true == IsChunkUnique)
-	   {
-		  ComputeLZW(ChunkLZW,&buffer[ChunkBoundary[writer][chunkIdx]],ChunkBoundary[writer][chunkIdx + 1] - ChunkBoundary[writer][chunkIdx]);
-	   }
-	}
-
-#endif
-
 	done = buffer[1] & DONE_BIT_L;
 	length = buffer[0] | (buffer[1] << 8);
 	length &= ~DONE_BIT_H;
+#ifdef usr_code
+    std::string input_buffer;
+	int pos = 0;
+	// printf("copying string");
+	input_buffer.insert(0,(const char*)(buffer+2));
+	pos += length;
+	cout << input_buffer<< endl;
+#endif
 	// printing takes time so be weary of transfer rate
 	//printf("length: %d offset %d\n",length,offset);
 
@@ -239,32 +169,23 @@ int main(int argc, char* argv[]) {
 		unsigned char* buffer = input[writer];
 
 		// decode
-	    	
-#ifdef usr_code
-    /*Compute chunk boundaries on block rcvd*/
-	cdc(ChunkBoundary[writer],buffer,blocksize);
-    /*Perform SHA on subsequent chunks*/
-	for(int chunkIdx = 0;chunkIdx < ChunkBoundary[writer].size();chunkIdx++)
-	{
-	   SHA256 sha;
-	   int IsChunkUnique = -1;
-	   std::vector<unsigned int> ChunkLZW;
-	   sha.update(&buffer[ChunkBoundary[writer][chunkIdx]],ChunkBoundary[writer][chunkIdx + 1] - ChunkBoundary[writer][chunkIdx]);
-	   std::array<uint8_t,32> hash = sha.digest();
-       /*Deduplicate using look-up for SHA 256*/
-       IsChunkUnique = Deduplicate(ChunkhashTbl, hash);
-	   /*If IsChunkUnique == true, compute LZW else send Chunk Id */
-       if(true == IsChunkUnique)
-	   {
-		  ComputeLZW(ChunkLZW,&buffer[ChunkBoundary[writer][chunkIdx]],ChunkBoundary[writer][chunkIdx + 1] - ChunkBoundary[writer][chunkIdx]);
-	   }
-	}
-#endif
-
-		
 		done = buffer[1] & DONE_BIT_L;
 		length = buffer[0] | (buffer[1] << 8);
 		length &= ~DONE_BIT_H;
+
+#ifdef usr_code
+        vector<unsigned int> ChunkBoundary;
+        input_buffer.insert(pos,(const char*)(buffer + 2));
+		pos += length; 
+		if((pos >= 8096)| (done))
+		{
+		    cout << input_buffer <<endl;
+			cdc(ChunkBoundary, input_buffer ,pos );
+			pos = pos - ChunkBoundary[ChunkBoundary.size() - 1];
+			input_buffer = input_buffer.substr(ChunkBoundary[ChunkBoundary.size() - 1],pos);
+
+		}
+#endif
 		//printf("length: %d offset %d\n",length,offset);
 		memcpy(&file[offset], &buffer[HEADER], length);
 
@@ -291,4 +212,3 @@ int main(int argc, char* argv[]) {
 
 	return 0;
 }
-
