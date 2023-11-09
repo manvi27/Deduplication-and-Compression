@@ -58,9 +58,12 @@ int ESE532_Server::setup_server(int avg_blocksize) {
 }
 
 int ESE532_Server::get_packet(unsigned char* buffer) {
+	// printf("packets rcvd start\n");
 	int bytes_read = recvfrom(sockfd, (void *) buffer, blocksize + HEADER, 0,
+	
 			(struct sockaddr *) &servaddr, &server_len);
 	packets_read++;
+	// printf("packets rcvd %d\n",packets_read);
 	// crash
 	if (bytes_read < 0) {
 		perror("recvfrom failed!");
