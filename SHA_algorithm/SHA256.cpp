@@ -57,8 +57,7 @@ void sha256_process(uint32_t *state, string data, uint32_t length)
 {
     uint32_t a, b, c, d, e, f, g, h, s0, s1, T1, T2;
     uint32_t X[16], i;
-printf("SHAPoint1");
-cout<<"--------------sha256process string"<<endl<<data<<endl<<"length = "<<length<<endl;
+    //printf("SHAPoint1");
     size_t blocks = length / 64;
     while (blocks--)
     {
@@ -94,7 +93,6 @@ cout<<"--------------sha256process string"<<endl<<data<<endl<<"length = "<<lengt
             b = a;
             a = T1 + T2;
         }
-        cout<<a<<" "<<b<<" "<<c<<" "<<d<<" "<<e<<" "<<f<<" "<<g<<" "<<h<<endl;
         for (; i < 64; i++)
         {
             s0 = X[(i + 1) & 0x0f];
@@ -114,7 +112,6 @@ cout<<"--------------sha256process string"<<endl<<data<<endl<<"length = "<<lengt
             b = a;
             a = T1 + T2;
         }
-        cout<<a<<" "<<b<<" "<<c<<" "<<d<<" "<<e<<" "<<f<<" "<<g<<" "<<h<<endl;
 
         state[0] += a;
         state[1] += b;
@@ -124,10 +121,6 @@ cout<<"--------------sha256process string"<<endl<<data<<endl<<"length = "<<lengt
         state[5] += f;
         state[6] += g;
         state[7] += h;
-    }
-    for(int i = 0;i < 8;i++)
-    {
-        printf("%x ",state[i]);
     }
     cout<<endl;
 }
@@ -162,8 +155,8 @@ int main(int argc, char* argv[])
 
     /* e3b0c44298fc1c14... */
     printf("SHA256 hash of empty message: ");
-    printf("%02X%02X%02X%02X%02X%02X%02X%02X...\n",
-        b1, b2, b3, b4, b5, b6, b7, b8);
+    // printf("%02X%02X%02X%02X%02X%02X%02X%02X...\n",
+        // b1, b2, b3, b4, b5, b6, b7, b8);
 
     int success = ((b1 == 0xE3) && (b2 == 0xB0) && (b3 == 0xC4) && (b4 == 0x42) &&
                     (b5 == 0x98) && (b6 == 0xFC) && (b7 == 0x1C) && (b8 == 0x14));
@@ -178,14 +171,15 @@ int main(int argc, char* argv[])
 
 #endif
 
-bool runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length)
+int runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length)
 {
 	/* initial state */
+    uint32_t ChunkId;
     uint32_t state[8] = {
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     };
-printf("SHAPoint0");
+// printf("SHAPoint0");
 	sha256_process(state, data, length);
 	char hashData[32];
 	for(size_t i = 0; i < 8; ++i) {
@@ -194,24 +188,26 @@ printf("SHAPoint0");
 		hashData[4*i+2] = (char) (state[i] >> 8);
 		hashData[4*i+3] = (char) (state[i] >> 0);
 	}
-printf("SHAPoint2");
+// printf("SHAPoint2");
 string xyz = "";
-     cout << data <<endl;
+    //  cout << data <<endl;
     for(int i = 0; i < 32; ++i) {
         xyz += hashData[i];
-        printf("%X ",hashData[i]);
+        // printf("%X ",hashData[i]);
        // printf("0x%02X ", hashData[i]);
         
     }
     //printf("%X\n",xyz);
 	//std::unordered_map <std::string, int> dedupTable;
-	if(checkDedup(xyz, dedupTable, TableSize) < 0)
+    ChunkId = checkDedup(xyz, dedupTable, TableSize);
+	if(ChunkId < 0)
 	{
-        printf("SHAPoint4");
+        // printf("SHAPoint4");
 		TableSize++;
-		cout<<"Added chunck to table!!!!!";
+		// cout<<"Added chunck to table!!!!!";
+        return -1;
 	}
-    printf("Dedup table.size - %ld\n", dedupTable.size());
+    // printf("Dedup table.size - %ld\n", dedupTable.size());
 
-	return true;
+	return ChunkId;
 }
