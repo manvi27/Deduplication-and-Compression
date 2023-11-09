@@ -12,7 +12,7 @@ int32_t checkDedup(string hash, std::unordered_map <std::string, int> &dedupTabl
     //cout<<dedupTable.find(hash)<<"......\n";
     //cout<<tableSize<<"-------\n";
     //cout<<dedupTable;
-
+printf("SHAPoint3\n");
     if(dedupTable.find(hash) != dedupTable.end()) {
         int32_t pos = dedupTable.at(hash);
         cout<<"Hash found at "<< pos << "\n";
@@ -25,8 +25,4 @@ int32_t checkDedup(string hash, std::unordered_map <std::string, int> &dedupTabl
     }
 
     return -1;
-}
-
-int main() {
-    return 0;
 }

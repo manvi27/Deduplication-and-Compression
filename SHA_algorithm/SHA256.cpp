@@ -57,7 +57,7 @@ void sha256_process(uint32_t state[8], string data, uint32_t length)
 {
     uint32_t a, b, c, d, e, f, g, h, s0, s1, T1, T2;
     uint32_t X[16], i;
-
+printf("SHAPoint1\n");
     size_t blocks = length / 64;
     while (blocks--)
     {
@@ -171,14 +171,14 @@ int main(int argc, char* argv[])
 
 #endif
 
-bool runSHA(std::unordered_map <std::string, int> &dedupTable, string data, uint32_t length)
+bool runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length)
 {
 	/* initial state */
     uint32_t state[8] = {
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     };
-
+printf("SHAPoint0\n");
 	sha256_process(state, data, length);
 	char hashData[32];
 	for(size_t i = 0; i < 8; ++i) {
@@ -187,10 +187,11 @@ bool runSHA(std::unordered_map <std::string, int> &dedupTable, string data, uint
 		hashData[i] = (char) (state[i] >> 8);
 		hashData[i] = (char) (state[i] >> 0);
 	}
-
+printf("SHAPoint2\n");
 	//std::unordered_map <std::string, int> dedupTable;
-	if(checkDedup(hashData, dedupTable, TableSize) >= 0)
+	if(checkDedup(hashData, dedupTable, TableSize) <= 0)
 	{
+        printf("SHAPoint4\n");
 		TableSize++;
 		cout<<"Added chunck to table!!!!!";
 	}

@@ -15,6 +15,8 @@
 #include "stopwatch.h"
 #include <vector>
 #include <math.h>
+#include "../SHA_algorithm/SHA256.h"
+#include <unordered_map>
 #define NUM_PACKETS 8
 #define pipe_depth 4
 #define DONE_BIT_L (1 << 7)
@@ -30,6 +32,8 @@ unsigned char* file;
 #define PRIME 3
 #define MODULUS 1024
 #define TARGET 0
+
+std::unordered_map <string, int> dedupTable;
 
 // const int pow[16] ={
 // 	PRIME, 9,27, 81, 243,729,
@@ -59,7 +63,7 @@ void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_siz
 {
 	// put your cdc implementation here
     uint64_t i;
-	unsigned int ChunkCount = 0;
+	//unsigned int ChunkCount = 0;
 	printf("buff length passed = %d\n",buff_size);
 
 	for(i = WIN_SIZE; i < buff_size - WIN_SIZE; i++)
@@ -181,6 +185,27 @@ int main(int argc, char* argv[]) {
 		{
 		    cout << input_buffer <<endl;
 			cdc(ChunkBoundary, input_buffer ,pos );
+			for(int i = 0; i < ChunkBoundary.size() - 1; i++)
+            {
+                printf("Point5\n");
+                /*reference for using chunks */
+                //cout <<input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]);
+                runSHA(dedupTable, input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
+                        sizeof(input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i])));
+            }
+			if(true == done)
+            {  
+                printf("Point6\n");
+                /*If not eof, update pos to accomodate remaining characters of current buffer
+                for next chunking operation*/
+                pos = pos - ChunkBoundary[ChunkBoundary.size() - 1];
+			    input_buffer = input_buffer.substr(ChunkBoundary[ChunkBoundary.size() - 1],pos);
+                /*Clear vector after using chunks and buffer for performing SHA and LZW
+                This can be different in final implementation. We may want to save chunking
+                vector longer*/
+                ChunkBoundary.clear();
+            }
+
 			pos = pos - ChunkBoundary[ChunkBoundary.size() - 1];
 			input_buffer = input_buffer.substr(ChunkBoundary[ChunkBoundary.size() - 1],pos);
 

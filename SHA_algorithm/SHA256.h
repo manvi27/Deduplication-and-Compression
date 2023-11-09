@@ -3,6 +3,7 @@
 
 #include <string>
 #include <array>
+#include <unordered_map>
 
 using namespace std;
 
@@ -52,5 +53,5 @@ private:
 };
 
 void sha256_process_arm(uint32_t state[8], string data, uint32_t length);
-bool runSHA(std::unordered_map <std::string, int> &dedupTable, const uint8_t data[], uint32_t length);
+bool runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length);
 #endif
