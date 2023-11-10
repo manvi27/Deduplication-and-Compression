@@ -103,6 +103,11 @@ void encoding(string s1,vector <char> &output)
     //cout << p << "\t" << table[p] << endl;
     output_code.push_back(table[p]);
     // array <char,4096> output;
+	// printf("---------output code before endianness change-----------\n");
+	// for(int i=0;i<output_code.size();i++)
+	// {
+	// 	printf("%x ",output_code[i]);
+	// }
     int k =0;
     for(int i =0;i< output_code.size();i++)
     {
@@ -125,22 +130,24 @@ void encoding(string s1,vector <char> &output)
         //    printf("%d ",output[k]);
            k++;
            /*Upper 4-bits in next output*/
-		   output.push_back((output_code[i] & 0xF00)>>4);
+		   output.push_back((output_code[i] & 0xFF00)>>8);
         //    output[k] = (output_code[i] & 0xF00)>>4;
        }
        else
        {
-           output[k] |= (output_code[i] & 0x0F);
-        //    printf("%d ",output[k]);
-           k++;
-           output.push_back(output_code[i]>>4);
-        //    printf("%d ",output[k]);
-           k++;
+           output[k] |= ((output_code[i] & 0x00F0)>>4);
+            //    printf("%d ",output[k]);
+			k++;
+			output.push_back(output_code[i]<<4);
+		//    printf("%d ",output[k]);
+			output[k] |= ((output_code[i] >> 12) & 0x000F);
+			k++;
        }
        
     }
     // printf("\n");
     //return output_code;
+	cout<<endl;
 }
 
 
@@ -225,7 +232,7 @@ int main(int argc, char* argv[]) {
 	// top function here.
 	// memcpy(&file[offset], &buffer[HEADER], length);
 
-	offset += length;
+	//offset += length;
 	writer++;
 	printf("Let's gooo x 6\n");
 	//last message
@@ -256,7 +263,7 @@ int main(int argc, char* argv[]) {
 		pos += length;
 		int UniqueChunkId; 
 		int header;//header for writing back to file 
-		if((pos >= 8096)| (done))
+		if((pos >= 8192)| (done))
 		{
 		    //cout << input_buffer <<endl;
 			ChunkBoundary.push_back(0);
@@ -265,27 +272,29 @@ int main(int argc, char* argv[]) {
             {
                 // printf("Point5\n");
                 /*reference for using chunks */
-                // cout <<ChunkBoundary[i + 1] - ChunkBoundary[i]<<"\n";
+                cout <<ChunkBoundary[i + 1] - ChunkBoundary[i]<<"\n";
 				UniqueChunkId = runSHA(dedupTable, input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
                         ChunkBoundary[i + 1] - ChunkBoundary[i]);
 				if(-1 == UniqueChunkId)
 				{
 					encoding(input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),payload);
-					header = ((ChunkBoundary[i + 1] - ChunkBoundary[i])<<1);
+					header = ((payload.size())<<1);
+					for(int i =0;i<payload.size();i++)
+					{
+						// cout<<"for chunkid"<<UniqueChunkId<<endl<<payload[i]<<endl;
+					}
+					cout<<"Unique chunk\n";
 				}
 				else
 				{
-					header = (((ChunkBoundary[i + 1] - ChunkBoundary[i])<<1) | 1);
-					payload.push_back(UniqueChunkId & 0xFF);
-					payload.push_back((UniqueChunkId>>8) & 0xFF);
-					payload.push_back((UniqueChunkId>>16) & 0xFF);
-					payload.push_back((UniqueChunkId>>24) & 0xFF);
+					cout<<"Duplicate chunk\n";
+					header = (((UniqueChunkId)<<1) | 1);
 
 				}
 				memcpy(&file[offset], &header, sizeof(header));
 				// cout << "-------header----------"<< header<<"=="<<(int)(*((int*)&file[offset]))<<endl;
 				offset +=  sizeof(header);
-				memcpy(&file[offset], &payload, payload.size());
+				memcpy(&file[offset], &payload[0], payload.size());
 				offset +=  payload.size();
 				payload.clear();
 
@@ -311,7 +320,7 @@ int main(int argc, char* argv[]) {
 		//printf("length: %d offset %d\n",length,offset);
 		// memcpy(&file[offset], &buffer[HEADER], length);
 
-		offset += length;
+		// offset += length;
 		writer++;
 	}
     cout << "-------------file---------------"<<endl<<file[0];
