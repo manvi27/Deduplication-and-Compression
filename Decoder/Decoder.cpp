@@ -18,21 +18,16 @@ static size_t Input_position;
 static int Read_code(void)
 {
   static unsigned char Byte;
-  // cout << "Reading code"<<std::endl;
+  cout << "Reading code"<<std::endl;
   int Code = 0;
   int Length = CODE_LENGTH;
   for (int i = 0; i < Length; i++)
   {
     if (Input_position % 8 == 0)
     {
-      // cout << "Reading byte"<<std::endl;
       Byte = Input.get();
-      // cout << "byte read"<<Byte<<" Input position"<<Input_position<<endl;
     }
-    // cout<<"Code compute"<<endl;   
     Code = (Code << 1) | ((Byte >> (7 - Input_position % 8)) & 1);
-    // cout<<"Code computed"<<endl;   
-    
     Input_position++;
   }
   return Code;
@@ -41,14 +36,9 @@ static int Read_code(void)
 static const std::string Decompress(size_t Size)
 {
   Input_position = 0;
-  // cout << "Decompressing begin"<<std::endl;
-
   Code_table.clear();
-  // cout << "Clear codetable"<<std::endl;
   for (int i = 0; i < 256; i++)
     Code_table.push_back(std::string(1, (char) i));
-  // cout << "push value to codetable"<<std::endl;
-
   int Old = Read_code();
   std::string Symbol(1, Old);
   std::string Output = Symbol;
@@ -57,24 +47,18 @@ static const std::string Decompress(size_t Size)
   {
   printf("InputPosition : %ld\n",Input_position);
     int New = Read_code();
-    // cout<<"new code read"<<endl;
     std::string Symbols;
     if (New >= (int) Code_table.size())
     {
-      //cout<<"new symbol"<<New<<endl;
       Symbols = Code_table[Old] + Symbol;
     }
     else
     {
-      //out<<"old symbol"<<Old<<endl;
       Symbols = Code_table[New];
     }
-    //cout<<"Symbols read from code table"<<endl;
     Output += Symbols;
     Symbol = std::string(1, Symbols[0]);
-    // cout<<"old"<<Old<<"New"<<New<<"symbol"<<Symbol<<endl;
     Code_table.push_back(Code_table[Old] + Symbol);
-    //printf("push to code table\n");
     Old = New;
   }
 

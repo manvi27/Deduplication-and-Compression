@@ -37,12 +37,6 @@ std::unordered_map <string, int> dedupTable;
 uint64_t hash_func(string input, unsigned int pos)
 {
 	// put your hash function implementation here
-	/*
-	hash = 0
-    for i in range(0, win_size):
-        hash += ord(input[pos+win_size-1-i])*(pow(prime, i+1))
-    return hash
-	*/
     uint64_t hash = 0;
 	uint8_t i = 0;
 
@@ -57,7 +51,6 @@ void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_siz
 {
 	// put your cdc implementation here
     uint64_t i;
-	//unsigned int ChunkCount = 0;
 	// printf("buff length passed = %d\n",buff_size);
 
 	for(i = WIN_SIZE; i < buff_size - WIN_SIZE; i++)
@@ -166,7 +159,6 @@ void handle_input(int argc, char* argv[], char** filename,int* blocksize) {
 
 int main(int argc, char* argv[]) {
 	stopwatch ethernet_timer;
-	printf("Let's gooo\n");
 	unsigned char* input[NUM_PACKETS];
 	int writer = 0;
 	int done = 0;
@@ -202,14 +194,12 @@ int main(int argc, char* argv[]) {
 			return 1;
 		}
 	}
-	printf("Let's gooo x 2\n");
 
 	server.setup_server(blocksize);
 
 	writer = pipe_depth;
 	server.get_packet(input[writer]);
 	count++;
-	printf("Let's gooo x 3\n");
 	// get packet
 	unsigned char* buffer = input[writer];
 
@@ -237,7 +227,6 @@ int main(int argc, char* argv[]) {
 
 	//offset += length;
 	writer++;
-	printf("Let's gooo x 6\n");
 	//last message
 	while (!done) {
 		// reset ring buffer
