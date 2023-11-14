@@ -8,6 +8,9 @@ set_top encoding
 add_files Decoder/Decoder.cpp
 add_files Dedup/Dedup.cpp
 add_files Dedup/Dedup.h
+add_files Test/ESE532_fall.html
+add_files Test/ESE532_syllabus.html
+add_files Test/ESE532_winter.html
 add_files Server/Host.cpp
 add_files Test/LittlePrince.txt
 add_files SHA_algorithm/SHA256.cpp

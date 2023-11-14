@@ -42,7 +42,7 @@ static const uint32_t K256[] =
 #define Ch(x,y,z)    (((x) & (y)) ^ ((~(x)) & (z)))
 #define Maj(x,y,z)   (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
 
-static uint32_t TableSize = 0;
+uint32_t TableSize = 0;
 
 /* Avoid undefined behavior                    */
 /* https://stackoverflow.com/q/29538935/608639 */

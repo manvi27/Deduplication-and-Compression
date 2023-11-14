@@ -57,6 +57,21 @@
 			<location>/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Dedup/Dedup.h</location>
 		</link>
 		<link>
+			<name>source/ESE532_fall.html</name>
+			<type>1</type>
+			<location>/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Test/ESE532_fall.html</location>
+		</link>
+		<link>
+			<name>source/ESE532_syllabus.html</name>
+			<type>1</type>
+			<location>/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Test/ESE532_syllabus.html</location>
+		</link>
+		<link>
+			<name>source/ESE532_winter.html</name>
+			<type>1</type>
+			<location>/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Test/ESE532_winter.html</location>
+		</link>
+		<link>
 			<name>source/Host.cpp</name>
 			<type>1</type>
 			<location>/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Server/Host.cpp</location>

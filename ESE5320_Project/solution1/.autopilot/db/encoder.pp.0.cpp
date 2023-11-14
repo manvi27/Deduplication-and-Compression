@@ -48186,7 +48186,7 @@ int runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length
 
 
 void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_size);
-__attribute__((sdx_kernel("encoding", 0))) void encoding(const char* s1,int length,char *output_code,int output_code_len);
+__attribute__((sdx_kernel("encoding", 0))) void encoding(const char* s1,int length,char *output_code, unsigned int *output_code_len);
 # 2 "Server/encoder.cpp" 2
 
 
@@ -48473,7 +48473,7 @@ void lookup(unsigned long* hash_table, assoc_mem* mem, unsigned int key, bool* h
     }
 }
 
-__attribute__((sdx_kernel("encoding", 0))) void encoding(const char* s1,int length,char *output_code,int output_code_len)
+__attribute__((sdx_kernel("encoding", 0))) void encoding(const char* s1,int length,char *output_code,unsigned int *output_code_len)
 {
 #pragma HLS TOP name=encoding
 # 303 "Server/encoder.cpp"
@@ -48515,8 +48515,8 @@ __attribute__((sdx_kernel("encoding", 0))) void encoding(const char* s1,int leng
     {
         if(i + 1 == length)
         {
-
-
+            std::cout << prefix_code;
+            std::cout << " ";
    out_tmp[codelength++] = (prefix_code);
             break;
         }
@@ -48528,11 +48528,12 @@ __attribute__((sdx_kernel("encoding", 0))) void encoding(const char* s1,int leng
         if(!hit)
         {
             out_tmp[codelength++] = prefix_code;
-
-
+            std::cout << prefix_code;
+            std::cout << " ";
 
             bool collision = 0;
             insert(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, next_code, &collision);
+
             if(collision)
             {
                 std::cout << "ERROR: FAILED TO INSERT! NO MORE ROOM IN ASSOC MEM!" << std::endl;
@@ -48549,7 +48550,8 @@ __attribute__((sdx_kernel("encoding", 0))) void encoding(const char* s1,int leng
         i += 1;
     }
     int k =0;
-    VITIS_LOOP_375_5: for(int i =0;i< codelength;i++)
+    cout<<"Code length "<<codelength<<endl;
+    VITIS_LOOP_377_5: for(int i =0;i< codelength;i++)
     {
 
     char data1 = (out_tmp[i] & 0x0ff0) >> 4;
@@ -48568,7 +48570,8 @@ __attribute__((sdx_kernel("encoding", 0))) void encoding(const char* s1,int leng
        }
 
     }
-    output_code_len = k;
+    *output_code_len = k;
+    cout<<"output code length"<<*output_code_len<<endl;
     std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
 }
 
@@ -48582,7 +48585,7 @@ void handle_input(int argc, char* argv[], char** filename,int* blocksize) {
  int x;
  extern char *optarg;
 
- VITIS_LOOP_408_1: while ((x = getopt(argc, argv, ":b:f:")) != -1) {
+ VITIS_LOOP_411_1: while ((x = getopt(argc, argv, ":b:f:")) != -1) {
   switch (x) {
   case 'b':
    *blocksize = atoi(optarg);

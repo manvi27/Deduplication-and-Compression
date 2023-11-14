@@ -15,6 +15,9 @@
         <file name="SHA_algorithm/SHA256.cpp" sc="0" tb="false" cflags="" csimflags="" blackbox="false"/>
         <file name="Test/LittlePrince.txt" sc="0" tb="false" cflags="" csimflags="" blackbox="false"/>
         <file name="Server/Host.cpp" sc="0" tb="false" cflags="" csimflags="" blackbox="false"/>
+        <file name="Test/ESE532_winter.html" sc="0" tb="false" cflags="" csimflags="" blackbox="false"/>
+        <file name="Test/ESE532_syllabus.html" sc="0" tb="false" cflags="" csimflags="" blackbox="false"/>
+        <file name="Test/ESE532_fall.html" sc="0" tb="false" cflags="" csimflags="" blackbox="false"/>
         <file name="Dedup/Dedup.h" sc="0" tb="false" cflags="" csimflags="" blackbox="false"/>
         <file name="Dedup/Dedup.cpp" sc="0" tb="false" cflags="" csimflags="" blackbox="false"/>
         <file name="Decoder/Decoder.cpp" sc="0" tb="false" cflags="" csimflags="" blackbox="false"/>

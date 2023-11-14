@@ -15,21 +15,6 @@
                 <option name="name" value="encoding"/>
             </pragma>
         </directive>
-        <directive functionName="encoding" label="" functionLabel="">
-            <pragma name="TOP">
-                <option name="name" value="encoding"/>
-            </pragma>
-        </directive>
-        <directive functionName="encoding" label="" functionLabel="">
-            <pragma name="TOP">
-                <option name="name" value="encoding"/>
-            </pragma>
-        </directive>
-        <directive functionName="encoding" label="" functionLabel="">
-            <pragma name="TOP">
-                <option name="name" value="encoding"/>
-            </pragma>
-        </directive>
     </sourceFile>
 </AutoPilot:ProjectResources>
 

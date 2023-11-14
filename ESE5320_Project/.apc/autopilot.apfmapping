@@ -13,6 +13,9 @@
     <originFiles name="server.cpp" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Server/server.cpp"/>
     <originFiles name="server.h" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Server/server.h"/>
     <originFiles name="stopwatch.h" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Server/stopwatch.h"/>
+    <originFiles name="ESE532_fall.html" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Test/ESE532_fall.html"/>
+    <originFiles name="ESE532_syllabus.html" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Test/ESE532_syllabus.html"/>
+    <originFiles name="ESE532_winter.html" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Test/ESE532_winter.html"/>
   </source>
   <testbench>
     <originFiles name="Testbench.cpp" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Test/Testbench.cpp"/>

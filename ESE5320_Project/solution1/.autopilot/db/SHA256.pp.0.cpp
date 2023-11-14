@@ -35466,7 +35466,7 @@ static const uint32_t K256[] =
     0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
 };
 # 45 "SHA_algorithm/SHA256.cpp"
-static uint32_t TableSize = 0;
+uint32_t TableSize = 0;
 
 
 
@@ -35483,7 +35483,7 @@ void sha256_process(uint32_t *state, string data, uint32_t length)
     uint32_t X[16], i;
 
     size_t blocks = length / 64;
-    VITIS_LOOP_62_1: while (blocks--)
+    while (blocks--)
     {
         a = state[0];
         b = state[1];
@@ -35494,7 +35494,7 @@ void sha256_process(uint32_t *state, string data, uint32_t length)
         g = state[6];
         h = state[7];
 
-        VITIS_LOOP_73_2: for (i = 0; i < 16; i++)
+        for (i = 0; i < 16; i++)
         {
             X[i] = B2U32(data[0], 24) | B2U32(data[1], 16) | B2U32(data[2], 8) | B2U32(data[3], 0);
             data += 4;
@@ -35517,7 +35517,7 @@ void sha256_process(uint32_t *state, string data, uint32_t length)
             b = a;
             a = T1 + T2;
         }
-        VITIS_LOOP_96_3: for (; i < 64; i++)
+        for (; i < 64; i++)
         {
             s0 = X[(i + 1) & 0x0f];
             s0 = (((((s0))>>(7)) | (((s0))<<(32-(7)))) ^ ((((s0))>>(18)) | (((s0))<<(32-(18)))) ^ ((s0)>> 3));
@@ -35560,7 +35560,7 @@ int runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length
 
  sha256_process(state, data, length);
  char hashData[32];
- VITIS_LOOP_185_1: for(size_t i = 0; i < 8; ++i) {
+ for(size_t i = 0; i < 8; ++i) {
   hashData[4*i + 0] = (char) (state[i] >> 24);
   hashData[4*i+1] = (char) (state[i] >> 16);
   hashData[4*i+2] = (char) (state[i] >> 8);
@@ -35569,7 +35569,7 @@ int runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length
 
 string xyz = "";
 
-    VITIS_LOOP_194_2: for(int i = 0; i < 32; ++i) {
+    for(int i = 0; i < 32; ++i) {
         xyz += hashData[i];
 
 
