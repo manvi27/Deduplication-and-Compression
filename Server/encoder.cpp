@@ -465,7 +465,7 @@ void handle_input(int argc, char* argv[], char** filename,int* blocksize) {
 	}
 }
 
-int main(int argc, char* argv[]) {
+int main1(int argc, char* argv[]) {
 	stopwatch ethernet_timer;
 	unsigned char* input[NUM_PACKETS];
 	int writer = 0;

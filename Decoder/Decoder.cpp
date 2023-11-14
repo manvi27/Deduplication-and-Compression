@@ -65,7 +65,7 @@ static const std::string Decompress(size_t Size)
   return Output;
 }
 
-int main(int Parameter_count, char * Parameters[])
+int main2(int Parameter_count, char * Parameters[])
 {
   printf("Decoder start\n");
   if (Parameter_count < 3)
