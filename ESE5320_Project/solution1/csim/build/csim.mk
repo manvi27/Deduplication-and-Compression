@@ -16,7 +16,7 @@ __SIM_DDS__ = 1
 
 ObjDir = obj
 
-HLS_SOURCES = ../../../../Test/Testbench.cpp ../../../../Decoder/Decoder.cpp ../../../../Dedup/Dedup.cpp ../../../../Server/Host.cpp ../../../../SHA_algorithm/SHA256.cpp ../../../../Server/encoder.cpp ../../../../Server/server.cpp
+HLS_SOURCES = ../../../../Test/Testbench.cpp ../../../../Server/server.cpp ../../../../Server/encoder.cpp ../../../../SHA_algorithm/SHA256.cpp ../../../../Server/Host.cpp ../../../../Dedup/Dedup.cpp ../../../../Decoder/Decoder.cpp
 
 override TARGET := csim.exe
 
@@ -73,29 +73,11 @@ $(ObjDir)/Testbench.o: ../../../../Test/Testbench.cpp $(ObjDir)/.dir
 
 -include $(ObjDir)/Testbench.d
 
-$(ObjDir)/Decoder.o: ../../../../Decoder/Decoder.cpp $(ObjDir)/.dir
-	$(Echo) "   Compiling ../../../../Decoder/Decoder.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
+$(ObjDir)/server.o: ../../../../Server/server.cpp $(ObjDir)/.dir
+	$(Echo) "   Compiling ../../../../Server/server.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
 	$(Verb)  $(CC) ${CCFLAG} -c -MMD  $(IFLAG) $(DFLAG) $< -o $@ ; \
 
--include $(ObjDir)/Decoder.d
-
-$(ObjDir)/Dedup.o: ../../../../Dedup/Dedup.cpp $(ObjDir)/.dir
-	$(Echo) "   Compiling ../../../../Dedup/Dedup.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
-	$(Verb)  $(CC) ${CCFLAG} -c -MMD  $(IFLAG) $(DFLAG) $< -o $@ ; \
-
--include $(ObjDir)/Dedup.d
-
-$(ObjDir)/Host.o: ../../../../Server/Host.cpp $(ObjDir)/.dir
-	$(Echo) "   Compiling ../../../../Server/Host.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
-	$(Verb)  $(CC) ${CCFLAG} -c -MMD  $(IFLAG) $(DFLAG) $< -o $@ ; \
-
--include $(ObjDir)/Host.d
-
-$(ObjDir)/SHA256.o: ../../../../SHA_algorithm/SHA256.cpp $(ObjDir)/.dir
-	$(Echo) "   Compiling ../../../../SHA_algorithm/SHA256.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
-	$(Verb)  $(CC) ${CCFLAG} -c -MMD  $(IFLAG) $(DFLAG) $< -o $@ ; \
-
--include $(ObjDir)/SHA256.d
+-include $(ObjDir)/server.d
 
 $(ObjDir)/encoder.o: ../../../../Server/encoder.cpp $(ObjDir)/.dir
 	$(Echo) "   Compiling ../../../../Server/encoder.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
@@ -103,8 +85,26 @@ $(ObjDir)/encoder.o: ../../../../Server/encoder.cpp $(ObjDir)/.dir
 
 -include $(ObjDir)/encoder.d
 
-$(ObjDir)/server.o: ../../../../Server/server.cpp $(ObjDir)/.dir
-	$(Echo) "   Compiling ../../../../Server/server.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
+$(ObjDir)/SHA256.o: ../../../../SHA_algorithm/SHA256.cpp $(ObjDir)/.dir
+	$(Echo) "   Compiling ../../../../SHA_algorithm/SHA256.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
 	$(Verb)  $(CC) ${CCFLAG} -c -MMD  $(IFLAG) $(DFLAG) $< -o $@ ; \
 
--include $(ObjDir)/server.d
+-include $(ObjDir)/SHA256.d
+
+$(ObjDir)/Host.o: ../../../../Server/Host.cpp $(ObjDir)/.dir
+	$(Echo) "   Compiling ../../../../Server/Host.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
+	$(Verb)  $(CC) ${CCFLAG} -c -MMD  $(IFLAG) $(DFLAG) $< -o $@ ; \
+
+-include $(ObjDir)/Host.d
+
+$(ObjDir)/Dedup.o: ../../../../Dedup/Dedup.cpp $(ObjDir)/.dir
+	$(Echo) "   Compiling ../../../../Dedup/Dedup.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
+	$(Verb)  $(CC) ${CCFLAG} -c -MMD  $(IFLAG) $(DFLAG) $< -o $@ ; \
+
+-include $(ObjDir)/Dedup.d
+
+$(ObjDir)/Decoder.o: ../../../../Decoder/Decoder.cpp $(ObjDir)/.dir
+	$(Echo) "   Compiling ../../../../Decoder/Decoder.cpp in $(BuildMode) mode" $(AVE_DIR_DLOG)
+	$(Verb)  $(CC) ${CCFLAG} -c -MMD  $(IFLAG) $(DFLAG) $< -o $@ ; \
+
+-include $(ObjDir)/Decoder.d

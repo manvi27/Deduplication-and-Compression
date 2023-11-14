@@ -1,0 +1,71 @@
+INFO: [SIM 2] *************** CSIM start ***************
+INFO: [SIM 4] CSIM will launch GCC as the compiler.
+   Compiling ../../../../Test/Testbench.cpp in debug mode
+   Generating csim.exe
+1424717....
+
+output code length315
+
+assoc mem entry count: 2
+Unique chunk
+chunk size = 299LZW size 315
+
+output code length505
+
+assoc mem entry count: 5
+Unique chunk
+chunk size = 539LZW size 505
+
+output code length1363
+
+assoc mem entry count: 26
+Unique chunk
+chunk size = 1822LZW size 1363
+
+output code length469
+
+assoc mem entry count: 3
+Unique chunk
+chunk size = 483LZW size 469
+
+Duplicate chunk
+chunk size = 539LZW size 0
+
+Duplicate chunk
+chunk size = 1822LZW size 0
+
+Duplicate chunk
+chunk size = 483LZW size 0
+
+Duplicate chunk
+chunk size = 539LZW size 0
+
+Duplicate chunk
+chunk size = 1822LZW size 0
+
+Duplicate chunk
+chunk size = 483LZW size 0
+
+Duplicate chunk
+chunk size = 539LZW size 0
+
+Duplicate chunk
+chunk size = 1822LZW size 0
+
+Duplicate chunk
+chunk size = 483LZW size 0
+
+Duplicate chunk
+chunk size = 539LZW size 0
+
+Duplicate chunk
+chunk size = 1822LZW size 0
+
+output code length235
+
+assoc mem entry count: 2
+Unique chunk
+chunk size = 211LZW size 235
+write file with 2951
+INFO: [SIM 1] CSim done with 0 errors.
+INFO: [SIM 3] *************** CSIM finish ***************
