@@ -1,0 +1,19 @@
+INFO: [SIM 2] *************** CSIM start ***************
+INFO: [SIM 4] CSIM will launch GCC as the compiler.
+   Compiling ../../../../Test/Testbench.cpp in debug mode
+../../../../Test/Testbench.cpp: In function ‘int main()’:
+../../../../Test/Testbench.cpp:12:34: error: ‘cdc’ was not declared in this scope
+  cdc(ChunkBoundary, s ,s.length());
+                                  ^
+../../../../Test/Testbench.cpp:17:26: error: ‘dedupTable’ was not declared in this scope
+   UniqueChunkId = runSHA(dedupTable, s.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
+                          ^~~~~~~~~~
+../../../../Test/Testbench.cpp:18:45: error: ‘runSHA’ was not declared in this scope
+      ChunkBoundary[i + 1] - ChunkBoundary[i]);
+                                             ^
+../../../../Test/Testbench.cpp:21:87: error: ‘encoding’ was not declared in this scope
+    encoding(s.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),payload);
+                                                                                       ^
+make: *** [csim.mk:72: obj/Testbench.o] Error 1
+ERR: [SIM 100] 'csim_design' failed: compilation error(s).
+INFO: [SIM 3] *************** CSIM finish ***************

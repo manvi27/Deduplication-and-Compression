@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<autopilotfilemapping:AutoPilotFileMapping xmlns:autopilotfilemapping="www.autoesl.com/autopilotfilemapping">
+  <source>
+    <originFiles name="stopwatch.h" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Server/stopwatch.h"/>
+    <originFiles name="server.h" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Server/server.h"/>
+    <originFiles name="server.cpp" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Server/server.cpp"/>
+    <originFiles name="encoder.h" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Server/encoder.h"/>
+    <originFiles name="encoder.cpp" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Server/encoder.cpp"/>
+    <originFiles name="SHA256.h" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/SHA_algorithm/SHA256.h"/>
+    <originFiles name="SHA256.cpp" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/SHA_algorithm/SHA256.cpp"/>
+    <originFiles name="LittlePrince.txt" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Test/LittlePrince.txt"/>
+    <originFiles name="Host.cpp" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Server/Host.cpp"/>
+    <originFiles name="Dedup.h" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Dedup/Dedup.h"/>
+    <originFiles name="Dedup.cpp" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Dedup/Dedup.cpp"/>
+    <originFiles name="Decoder.cpp" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Decoder/Decoder.cpp"/>
+  </source>
+  <testbench>
+    <originFiles name="Testbench.cpp" path="/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/Test/Testbench.cpp"/>
+  </testbench>
+</autopilotfilemapping:AutoPilotFileMapping>
