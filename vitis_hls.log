@@ -1,35 +1,36 @@
 INFO: Applying HLS Y2K22 patch v1.2 for IP revision
 INFO: [HLS 200-10] Running '/mnt/pollux/software/xilinx/2020.2/Vitis_HLS/2020.2/bin/unwrapped/lnx64.o/vitis_hls'
-INFO: [HLS 200-10] For user 'adithyar' on host 'hadar.seas.upenn.edu' (Linux_x86_64 version 5.14.21-150500.55.31-default) on Mon Nov 13 22:16:29 EST 2023
+INFO: [HLS 200-10] For user 'adithyar' on host 'hadar.seas.upenn.edu' (Linux_x86_64 version 5.14.21-150500.55.31-default) on Tue Nov 14 01:20:21 EST 2023
 INFO: [HLS 200-10] On os "openSUSE Leap 15.5"
 INFO: [HLS 200-10] In directory '/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression'
 Sourcing Tcl script '/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/ESE5320_Project/solution1/csim.tcl'
 INFO: [HLS 200-1510] Running: open_project ESE5320_Project 
 INFO: [HLS 200-10] Opening project '/mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/ESE5320_Project'.
-INFO: [HLS 200-1510] Running: add_files Server/stopwatch.h 
-INFO: [HLS 200-10] Adding design file 'Server/stopwatch.h' to the project
-INFO: [HLS 200-1510] Running: add_files Server/server.h 
-INFO: [HLS 200-10] Adding design file 'Server/server.h' to the project
-INFO: [HLS 200-1510] Running: add_files Server/server.cpp 
-INFO: [HLS 200-10] Adding design file 'Server/server.cpp' to the project
-INFO: [HLS 200-1510] Running: add_files Server/encoder.h 
-INFO: [HLS 200-10] Adding design file 'Server/encoder.h' to the project
-INFO: [HLS 200-1510] Running: add_files Server/encoder.cpp 
-INFO: [HLS 200-10] Adding design file 'Server/encoder.cpp' to the project
-INFO: [HLS 200-1510] Running: add_files SHA_algorithm/SHA256.h 
-INFO: [HLS 200-10] Adding design file 'SHA_algorithm/SHA256.h' to the project
-INFO: [HLS 200-1510] Running: add_files SHA_algorithm/SHA256.cpp 
-INFO: [HLS 200-10] Adding design file 'SHA_algorithm/SHA256.cpp' to the project
-INFO: [HLS 200-1510] Running: add_files Test/LittlePrince.txt 
-INFO: [HLS 200-10] Adding design file 'Test/LittlePrince.txt' to the project
-INFO: [HLS 200-1510] Running: add_files Server/Host.cpp 
-INFO: [HLS 200-10] Adding design file 'Server/Host.cpp' to the project
-INFO: [HLS 200-1510] Running: add_files Dedup/Dedup.h 
-INFO: [HLS 200-10] Adding design file 'Dedup/Dedup.h' to the project
-INFO: [HLS 200-1510] Running: add_files Dedup/Dedup.cpp 
-INFO: [HLS 200-10] Adding design file 'Dedup/Dedup.cpp' to the project
+INFO: [HLS 200-1510] Running: set_top encoding 
 INFO: [HLS 200-1510] Running: add_files Decoder/Decoder.cpp 
 INFO: [HLS 200-10] Adding design file 'Decoder/Decoder.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files Dedup/Dedup.cpp 
+INFO: [HLS 200-10] Adding design file 'Dedup/Dedup.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files Dedup/Dedup.h 
+INFO: [HLS 200-10] Adding design file 'Dedup/Dedup.h' to the project
+INFO: [HLS 200-1510] Running: add_files Server/Host.cpp 
+INFO: [HLS 200-10] Adding design file 'Server/Host.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files Test/LittlePrince.txt 
+INFO: [HLS 200-10] Adding design file 'Test/LittlePrince.txt' to the project
+INFO: [HLS 200-1510] Running: add_files SHA_algorithm/SHA256.cpp 
+INFO: [HLS 200-10] Adding design file 'SHA_algorithm/SHA256.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files SHA_algorithm/SHA256.h 
+INFO: [HLS 200-10] Adding design file 'SHA_algorithm/SHA256.h' to the project
+INFO: [HLS 200-1510] Running: add_files Server/encoder.cpp 
+INFO: [HLS 200-10] Adding design file 'Server/encoder.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files Server/encoder.h 
+INFO: [HLS 200-10] Adding design file 'Server/encoder.h' to the project
+INFO: [HLS 200-1510] Running: add_files Server/server.cpp 
+INFO: [HLS 200-10] Adding design file 'Server/server.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files Server/server.h 
+INFO: [HLS 200-10] Adding design file 'Server/server.h' to the project
+INFO: [HLS 200-1510] Running: add_files Server/stopwatch.h 
+INFO: [HLS 200-10] Adding design file 'Server/stopwatch.h' to the project
 INFO: [HLS 200-1510] Running: add_files -tb Test/Testbench.cpp -cflags -Wno-unknown-pragmas -csimflags -Wno-unknown-pragmas 
 INFO: [HLS 200-10] Adding test bench file 'Test/Testbench.cpp' to the project
 INFO: [HLS 200-1510] Running: open_solution solution1 -flow_target vivado 
@@ -40,36 +41,76 @@ INFO: [HLS 200-1505] Using flow_target 'vivado'
 Resolution: For help on HLS 200-1505 see www.xilinx.com/cgi-bin/docs/rdoc?v=2020.2;t=hls+guidance;d=200-1505.html
 INFO: [HLS 200-1510] Running: set_part xczu3eg-sbva484-1-i 
 INFO: [HLS 200-1510] Running: create_clock -period 6.666666666666666667ns -name default 
-INFO: [SYN 201-201] Setting up clock 'default' with a period of 6.667ns.
 INFO: [HLS 200-1510] Running: csim_design -quiet 
 INFO: [SIM 211-2] *************** CSIM start ***************
 INFO: [SIM 211-4] CSIM will launch GCC as the compiler.
    Compiling ../../../../Test/Testbench.cpp in debug mode
-../../../../Test/Testbench.cpp: In function ‘int main()’:
-../../../../Test/Testbench.cpp:12:34: error: ‘cdc’ was not declared in this scope
-  cdc(ChunkBoundary, s ,s.length());
-                                  ^
-../../../../Test/Testbench.cpp:17:26: error: ‘dedupTable’ was not declared in this scope
-   UniqueChunkId = runSHA(dedupTable, s.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
-                          ^~~~~~~~~~
-../../../../Test/Testbench.cpp:18:45: error: ‘runSHA’ was not declared in this scope
-      ChunkBoundary[i + 1] - ChunkBoundary[i]);
-                                             ^
-../../../../Test/Testbench.cpp:21:87: error: ‘encoding’ was not declared in this scope
-    encoding(s.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),payload);
-                                                                                       ^
-make: *** [csim.mk:72: obj/Testbench.o] Error 1
-ERROR: [SIM 211-100] 'csim_design' failed: compilation error(s).
+   Generating csim.exe
+1424717....
+
+output code length315
+
+assoc mem entry count: 2
+Unique chunk
+chunk size = 299LZW size 315
+
+output code length505
+
+assoc mem entry count: 5
+Unique chunk
+chunk size = 539LZW size 505
+
+output code length1363
+
+assoc mem entry count: 26
+Unique chunk
+chunk size = 1822LZW size 1363
+
+output code length469
+
+assoc mem entry count: 3
+Unique chunk
+chunk size = 483LZW size 469
+
+Duplicate chunk
+chunk size = 539LZW size 0
+
+Duplicate chunk
+chunk size = 1822LZW size 0
+
+Duplicate chunk
+chunk size = 483LZW size 0
+
+Duplicate chunk
+chunk size = 539LZW size 0
+
+Duplicate chunk
+chunk size = 1822LZW size 0
+
+Duplicate chunk
+chunk size = 483LZW size 0
+
+Duplicate chunk
+chunk size = 539LZW size 0
+
+Duplicate chunk
+chunk size = 1822LZW size 0
+
+Duplicate chunk
+chunk size = 483LZW size 0
+
+Duplicate chunk
+chunk size = 539LZW size 0
+
+Duplicate chunk
+chunk size = 1822LZW size 0
+
+output code length235
+
+assoc mem entry count: 2
+Unique chunk
+chunk size = 211LZW size 235
+write file with 2951
+INFO: [SIM 211-1] CSim done with 0 errors.
 INFO: [SIM 211-3] *************** CSIM finish ***************
-INFO: [HLS 200-111] Finished Command csim_design CPU user time: 0.17 seconds. CPU system time: 0.14 seconds. Elapsed time: 0.5 seconds; current allocated memory: 208.227 MB.
-4
-    while executing
-"source /mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/ESE5320_Project/solution1/csim.tcl"
-    invoked from within
-"hls::main /mnt/castor/seas_home/a/adithyar/Deduplication-and-Compression/ESE5320_Project/solution1/csim.tcl"
-    ("uplevel" body line 1)
-    invoked from within
-"uplevel 1 hls::main {*}$newargs"
-    (procedure "hls_proc" line 16)
-    invoked from within
-"hls_proc [info nameofexecutable] $argv"
+INFO: [HLS 200-111] Finished Command csim_design CPU user time: 0.98 seconds. CPU system time: 0.28 seconds. Elapsed time: 1.61 seconds; current allocated memory: 208.261 MB.
