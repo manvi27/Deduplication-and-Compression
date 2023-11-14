@@ -24,6 +24,6 @@
 #define HEADER 2
 
 void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_size);
-void encoding(const char* s1,int length,char *output_code,int *output_code_len);
+void encoding(const char* s1,int length,char *output_code, unsigned int *output_code_len);
 
 #endif

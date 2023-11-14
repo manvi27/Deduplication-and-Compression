@@ -7,6 +7,7 @@ using namespace std;
 std::unordered_map <string, int> dedupTable1;
 static std::ifstream Input;
 
+extern uint32_t TableSize;
 
 void decoding(vector<int> op)
 {
@@ -49,7 +50,7 @@ int main(void)
 	int offset = 0;
 	unsigned char* file;
 	std::ifstream myfile;
-	myfile.open("LittlePrince.txt");
+	myfile.open("ESE532_fall.html");
 	std::string s;
 	file = (unsigned char*) malloc(sizeof(unsigned char) * 70000000);
 	char c;
@@ -68,7 +69,7 @@ int main(void)
 	cout<<s.length();
 	vector<unsigned int> ChunkBoundary;
 	char payload[4096];
-	int payloadlen;
+	unsigned int payloadlen;
 	//string s = "The Little Prince Chapter IOnce when I was six years old I saw a magnificent picture in a book, called True Stories from Nature, about the primeval forest. It was a picture of a boa constrictor in the act of swallowing an animal. Here is a copy of the drawing.BoaIn the book it said: \"Boa constrictors swallow their prey whole, without chewing it. After that they are not able to move, and they sleep through the six months that they need for digestion.\"I pondered deeply, then, over the adventures of the jungle. And after some work with a colored pencil I succeeded in making my first drawing. My Drawing Number One. It looked something like this:Hat";
     int UniqueChunkId;
     int header;
@@ -76,7 +77,7 @@ int main(void)
     cdc(ChunkBoundary, s ,s.length());
     ChunkBoundary.push_back(s.length());
 	//TotalChunksrcvd += ChunkBoundary.size() ;
-
+	const char *str = s.c_str();
 
     cout<<ChunkBoundary.size()<<"....\n";
    for(int i = 0; i < ChunkBoundary.size() - 1; i++)
@@ -87,21 +88,22 @@ int main(void)
 		if(-1 == UniqueChunkId)
 		{
 			//encoding(s.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),payload);
-			const char *str = s.c_str();
+			//const char *str = s.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]).c_str();
 			encoding(str + ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i],payload,&payloadlen);
+			payloadlen = (TableSize > 1) ? payloadlen + 1 : payloadlen;
 			header = ((payloadlen)<<1);
-			cout<<"Unique chunk\n";
+			cout<<"Unique chunk ... "<<UniqueChunkId<<endl;
 		}
 		else
 		{
-			cout<<"Duplicate chunk\n";
+			cout<<"Duplicate chunk ... "<<UniqueChunkId<<endl;
 			header = (((UniqueChunkId)<<1) | 1);
 
 		}
 		memcpy(&file[offset], &header, sizeof(header));
 		// cout << "-------header----------"<< header<<"=="<<(int)(*((int*)&file[offset]))<<endl;
 		offset +=  sizeof(header);
-		 cout<<"chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[i]<<"LZW size " <<payloadlen<<endl;
+		 cout<<"Chuck position : "<<ChunkBoundary[i]<<" chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[i]<<" LZW size " <<payloadlen<<endl;
 		memcpy(&file[offset], &payload[0], payloadlen);
 		offset +=  payloadlen;
 		payloadlen = 0;

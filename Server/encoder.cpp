@@ -299,12 +299,12 @@ void lookup(unsigned long* hash_table, assoc_mem* mem, unsigned int key, bool* h
     }
 }
 //****************************************************************************************************************
-void encoding(const char* s1,int length,char *output_code,int *output_code_len)
+void encoding(const char* s1,int length,char *output_code,unsigned int *output_code_len)
 {
     // create hash table and assoc mem
     unsigned long hash_table[CAPACITY];
     assoc_mem my_assoc_mem;
-    unsigned int out_tmp[200];
+    unsigned int out_tmp[4096];
     // make sure the memories are clear
     for(int i = 0; i < CAPACITY; i++)
     {
@@ -338,8 +338,8 @@ void encoding(const char* s1,int length,char *output_code,int *output_code_len)
     {
         if(i + 1 == length)
         {
-//            std::cout << prefix_code;
-//            std::cout << " ";
+            std::cout << prefix_code;
+            std::cout << " ";
 			out_tmp[codelength++] = (prefix_code);
             break;
         }
@@ -351,8 +351,8 @@ void encoding(const char* s1,int length,char *output_code,int *output_code_len)
         if(!hit)
         {
             out_tmp[codelength++] = prefix_code;
-//            std::cout << prefix_code;
-//            std::cout << " ";
+            std::cout << prefix_code;
+            std::cout << " ";
 
             bool collision = 0;
             insert(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, next_code, &collision);
@@ -373,6 +373,7 @@ void encoding(const char* s1,int length,char *output_code,int *output_code_len)
         i += 1;
     }
     int k =0;
+    cout<<"Code length "<<codelength<<endl;
     for(int i =0;i< codelength;i++)
     {
        /*Change the endianness of output code*/

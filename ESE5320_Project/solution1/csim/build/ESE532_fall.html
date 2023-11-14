@@ -1,0 +1,335 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html> <head>
+<title>ESE532: System-on-a-Chip Architecture</title>
+</head>
+
+<body>
+<h1>System-on-a-Chip Architecture</h1>
+<h2>Course: ESE532</h2> 
+<b>Units:</b>  1.0 CU<br>
+<b>Terms:</b> Fall 2017  <br>
+<b>When:</b> MW 3--4:30pm (First Lecture Wed. 8/30/17)<br>
+<b>Where:</b> Towne 321 <br>
+<b>Instructor:</b> <a
+href="http://www.seas.upenn.edu/~andre/">DeHon</a> (office hours
+T4:15pm-5:30pm, Levine 270)
+<br>
+<b>TA:</b> <a href="http://www.seas.upenn.edu/~giesen/">Hans Giesen</a><br>
+<table>
+  <tr><td>Lab Hours:</td><td>Tuesday 6-7pm in Ketterer (Moore 200)</td><tr>
+    <tr><td></td>          <td>Thursday 5:30-6:30pm in Detkin</td></tr>
+</table>
+<br>
+<b>Prerequisite:</b> <table border=1><tr><td>Undergraduate</td><td> CIS240,
+  ESE350, (CIS371 helpful)</td></tr>
+                           <tr><td>Graduate</td><td>working knowledge of
+			     C</td></tr>
+			     </table> 
+<br>
+<b>URL:</b> <code>&lt;http://www.seas.upenn.edu/~ese532/&gt;</code>
+<br>
+
+<p>
+
+Quick Links: 
+[<a href="#objectives">Course Objectives</a>]
+[<a href="#project">Project</a>]
+[<a href="#grade">Grading</a>]
+[<a href="http://www.seas.upenn.edu/~ese532/fall2017/fall2017.html">Syllabus</a>]
+[<a href="#policy">Course Policies</a>]
+<!-- [<a href="#previous">Previous Offerings</a>] -->
+[<a href="#docs">Documentation</a>]
+			     [<a href="https://piazza.com/upenn/fall2017/ese532/">piazza</a>]
+[<a href="#relation">Relation to other courses</a>] 
+<p>
+
+<hr>
+
+<h2>Catalog Level Description:</h2>
+
+Motivation, design, programming, optimization, and use of modern
+System-on-a-Chip (SoC) architectures.  Hands-on coverage of the breadth of
+computer engineering within the context of SoC platforms from gates to
+application software, including on-chip memories and communication
+networks, I/O interfacing, RTL design of accelerators, processors,
+concurrency, firmware and OS/infrastructure software.  Formulating parallel
+decompositions, hardware and software solutions, hardware/software
+tradeoffs, and hardware/software codesign.  Attention to real-time
+requirements.
+
+<p>
+<hr>
+
+<a name="objectives">
+<h2>Course Objectives</h2>
+</a>
+By the end of theh course, you will be able to:
+<ul>
+<li> design, optimize, and program a modern System-on-a-Chip.
+<li> (i) analyze a computational task, (ii) characterize its computational requirements, (iii) identify performance bottlenecks, (iv) identify, explore, and evaluate a rich design space of solutions, and (v) select and implement a design that meets engineering requirements.
+<li> decompose the task into parallel components that cooperate to solve the problem.
+<li> characterize and develop real-time solutions.
+<li> implement both hardware and software solutions, how to formulate hardware/software tradeoffs, and how to perform hardware/software codesign.
+<li> understand the system on a chip from gates to application software, including on-chip memories and communication networks, I/O interfacing, RTL design of accelerators, processors, firmware and OS/infrastructure software.
+<li> understand and estimate key design metrics and requirements including area, latency, throughput, energy, power, predictability, and reliability.
+</ul>
+<p>
+<hr>
+
+<a name="Topics">
+<h2>Topics</h2>
+</a>
+
+Architectural building blocks and heterogeneous architecture,
+Hardware-Software Codesign, Embedded Software, Interfacing, Computational
+requirements and system analysis, Concurrency, Real Time, Design-space
+formulation and exploration, Costs and metrics (energy, area, runtime,
+reliability, predictability), Quantitative design and analysis. 
+
+<p>
+<hr>
+
+<a name="syllabus">
+<h2>Rough Syllabus Plan</h2>
+</a>
+<ol>
+  <li>  Overview, scope, methodology
+  <li>  Metrics and bottlenecks
+  <li>  Memory 
+  <li>  Computational models
+  <li>  Data parallel microarchitectures (SIMD, Vector, GPU)
+  <li>  Thread-level Parallelism and virtualization
+  <li>  Real-time, reactive
+  <li>  Spatial computations, basic mapping from high-level
+  <li>  Fine-grained parallelism microarchitectures (FSMD, VLIW)
+  <li>  High-level synthesis (C-to-gates, resource selection and provisioning)
+  <li>  On-chip networking / Network-on-Chip
+  <li>  VLSI technology and scaling
+  <li>  Defect and fault tolerance
+ </ol>
+ <p>
+ Detailed <a
+ href="http://www.seas.upenn.edu/~ese532/spring2017/spring2017.html">2017
+ Syllabus</a>.
+ <p>
+<hr>
+
+<a name="project">
+<h2>Project</h2>
+ </a>
+
+ This course will include a substantial project running throughout term.
+ Students work in groups of 2.  Platform will be an SoC-FPGA (e.g.,
+ Xilinx Zynq or Intel/Altera Arria), allowing the provisioning of soft-core
+ processors, accelerators, and memory in addition to the use of the
+ embedded SoC logic.  It will start with a significant task (like video
+ acquisition, processing, compression, networking).  Course starts by
+ running the task on single processor and identify resource requirements.
+ Then, it will deal with I/O for task.
+ It then migrates the task to multiple processors to accelerate.  After
+ ther, it develops custom  accelerators for task and integrate with
+ networked processor.  The final half of the course is an open-ended
+ optimization project using the techniques and design options introduced in the course.
+
+ <p>
+<hr>
+
+<a name="grade">
+<h2>Grading</h2>
+</a>
+
+Grading is based on:
+<ul>
+  <li> Design Project [50%]
+  <li> Weekly Assignments [20%]
+  <li> Midterm [10%]
+  <li> Final [20%]
+</ul>
+
+<p>
+<hr>
+
+<a name="policy">
+<h2>Policies</h2>
+</a>
+
+<h3>Writeups</h2>
+
+Writeups <b>must</b> be done in electronic form and submitted through
+Canvas (below).  Use CAD or drawing
+tools where appropriate. <font color=#ff0000>Handwritten assignments and
+hand-drawn figures are not acceptable.</font>
+<!--
+If you don't already have a favorite, suitable CAD or drawing tool, <a
+href="http://en.wikipedia.org/wiki/Wikipedia:WikiProject_Electronics/Programs">here
+is a
+wikipedia page summarizing circuit diagraming tools</a>.
+-->
+<p>
+Each individual should turn in a homework or project writeup.
+The specific homework assignments will specify what portion of the writeup
+can be performed jointly and what part should be individual.  Even if the
+entire assignment is done jointly, we will still expect individual
+submissions (both students submit identical PDFs, if it is appropriate for
+that project or homework assignment). 
+
+
+<h3>Homework Turnin</h3>
+All assignments will be turned in electronically through the <a href="https://upenn.instructure.com">Penn Canvas
+website</a>. Log in to canvas with your PennKey and password, then select ESE 532 from the Courses and Groups dropdown menu.
+Select Assignments from the links on the left and select the assignment you
+wish to submit for.  Submission should be as a single file (preferably
+.pdf).
+
+
+<h3>Late Assignments</h3>
+
+Assignments must be turned in by the published due date to receive credit.
+<p>
+
+We will grant each student 3 free late days for the course of the entire
+term.  That means you could, for example, turn in three assignments one day late each or
+one assignment 3 days late and still receive full credit.  The quantum for
+free late days is a day, so you cannot turn in every assignment 6 hours
+late and receive full credit.
+<p>
+
+
+
+
+<a name="collaboration">
+<h3>Collaboration</h3>
+</a>
+Students are allowed and encouraged to help each other with the Xilinx
+tools (SDSoC, SDK, Vivado, Vivado HLS, Windows, Linux) used for the course, but are disallowed from developing collaborative
+design solutions (C-code, pragmas, design and analysis) outside of
+identified project groups.  Each team must develop its own design soltuion;
+collaborating across teams is a violation of the collaboration policy.
+Within a project group,
+the assignment will specify what part should be done as a group and what
+part should be done individually.
+<p>
+<ul>
+  <li> <b>Tools</b>---We know the tools are complex and the documentation
+  often dense or inadequate, and we won't be surprised if they are buggy.
+  It will likely be necessary to collaborate as a class on figuring out how
+  to best use the tools for the term.  We encourage students to help each
+  other and share what they learned.  We will award bonus points for
+  student-developed instructions and tutorials on how to solve common
+  tasks that arise for the tools.
+  
+  <li> <b>Design Solutions</b>---Each team (or individual where specified)
+  should develop their own solutions to the design problem and their own
+  implementations.  You are taking this class to develop these skills, and
+  we believe you need to work out the solutions on your own to master the
+  skills.  You cannot share code, diagrams, specific pragma settings,
+  plots, analysis, metrics, or other results.  You cannot share problem
+  decompositions.
+
+  <li> <b>HLS Pragmas</b>---HLS Pragmas sit at the border between
+  where collaboration is allowed and not allowed.  You are allowed to help
+  make each other aware of the existence of pragmas and the syntax for
+  pragmas.  You are not allowed to tell each other what pragma values and
+  settings best solves the problem---you should be reasoning through what
+  the settings mean and how they impact the code mapping, and you should be
+  performing your own experiments in your project teams.  You are
+  allowed to say where a pragmas goes syntatically (e.g., relative to function
+  header, relative to loop header), but are not allowed to suggest which
+  function or loop would benefit from a specific pragma.
+</ul>  
+
+
+<p>
+In general, you are expected to abide by <a
+href="http://www.upenn.edu/academicintegrity/ai_codeofacademicintegrity.html">Penn's
+Code of Academic Integrity</a>.  If there is any uncertainty, please ask.
+
+<p>
+
+<p>
+<h3>Absentees</h3>
+
+Use the <a href="http://www.college.upenn.edu/node/3998">Penn Course Absence Report (CAR)</a> in Penn-in-Touch to report
+absences.
+<p>
+
+<h3>Credit Adjustment</h3>
+
+Make sure you call any problems with grading to our attention immediately
+and not later than the next class meeting after they are returned or posted
+on canvas.  To submit a request for a review of a credit assignment on
+a lab assignment send an email to the instructor stating the nature of the
+problem and the remedy you desire. We will not consider any requests for
+grade adjustments that are submitted later than the one week grace period
+after the grades are posted on canvas. You are responsible for checking
+your posted grades in a timely manner.
+
+<hr>
+<a name="docs">
+<h2>Documentation</h2>
+
+<ul>
+  <li> Zynq <a
+  href="https://www.xilinx.com/support/documentation/data_sheets/ds190-Zynq-7000-Overview.pdf">Overview</a>,
+  <a href="http://www.zynqbook.com">downloadable eBook</a>, <a
+  href="https://www.xilinx.com/support/documentation/user_guides/ug585-Zynq-7000-TRM.pdf">Technical Reference Manual</a>
+  <li> Zed Board <a href="http://zedboard.org/support/documentation/1521">Documentation</a>
+  <li> SDSoC <a
+  href="https://www.xilinx.com/support/documentation/sw_manuals/xilinx2015_2/ug1027-intro-to-sdsoc.pdf">User's Guide</a>
+  <li> Vivado HLS <a
+  href="https://www.xilinx.com/support/documentation/sw_manuals/xilinx2014_1/ug902-vivado-high-level-synthesis.pdf">User's Guide</a>
+  <li> SDK <a
+  href="https://www.xilinx.com/support/documentation/sw_manuals/xilinx2015_1/SDK_Doc/index.html">Getting
+  Started User's Guide</a>
+  <!-- <li> Vivado -->
+</ul>
+
+<hr>
+<a name="previous">
+<h2>Previous Offerings</h2>
+
+<ul>
+     <li> <a href="spring2017/spring2017.html">Spring 2017</a>
+</ul>  
+
+<p>
+<hr>
+<a name="relation">
+
+<h2>Comparison to ESE534</h2>
+
+This will borrow or inherit about 1/3 of the material from the
+<a href="http://www.seas.upenn.edu/~ese534/">current
+ESE534</a>.  This course will not go deep into how to design a spatial
+substrate (compute, interconnect), nor go deep into processor--FPGA
+continuum and instruction design.  If offered again, ESE534 will likely
+evolve to take this course as a pre-requisite.  Possibly ESE534 and 535 
+will merge into a single advanced, follow-on course.  Note that ESE534 did
+not have the kind of hands-on project that becomes a key component of this
+course.
+
+<p>
+
+<h2>Comparison to CIS501</h2>
+
+This course is complementary to <a href="https://www.cis.upenn.edu/~cis501/">CIS501</a>.  This course is more focused on
+custom, application-oriented design with real-time concerns, while CIS501
+focuses on ISA compatibility and best-effort designs.  This course assumes
+you are willing to recompile and perhaps rewrite your application code; as
+a result, it does not touch upon the ISA abstraction and compatibility and
+will have almost nothing on dynamic ILP and pipelining of a general-purpose
+processor.  This course will be driven more by real-time concerns rather
+than best-effort tasks, whereas CIS501 is more focused on best-effort.
+This course will spend one day on the high-level benefits of memory
+hierarchy, but will not dive deep into cache-design and cache-hierarchies,
+which is a major component of CIS501.  This course will mostly look at
+non-shared memory models and architectures with, at most, a small nod to
+the existence and challenges in shared memory, whereas CIS501 is mostly
+focused on shared-memory models and architectures. 
+
+
+
+<hr>
+<address></address>
+<!-- hhmts start -->Last modified: Sat Sep  9 16:54:50 EDT 2017 <!-- hhmts end -->
+</body> </html>

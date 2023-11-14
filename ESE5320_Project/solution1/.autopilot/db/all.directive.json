@@ -36,42 +36,6 @@
                 "value": "encoding"
               }]
           }
-        },
-        {
-          "functionName": "encoding",
-          "label": "",
-          "functionLabel": "",
-          "pragma": {
-            "name": "TOP",
-            "option": [{
-                "name": "name",
-                "value": "encoding"
-              }]
-          }
-        },
-        {
-          "functionName": "encoding",
-          "label": "",
-          "functionLabel": "",
-          "pragma": {
-            "name": "TOP",
-            "option": [{
-                "name": "name",
-                "value": "encoding"
-              }]
-          }
-        },
-        {
-          "functionName": "encoding",
-          "label": "",
-          "functionLabel": "",
-          "pragma": {
-            "name": "TOP",
-            "option": [{
-                "name": "name",
-                "value": "encoding"
-              }]
-          }
         }
       ]
     }]}
