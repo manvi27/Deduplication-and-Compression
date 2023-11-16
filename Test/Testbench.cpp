@@ -2,6 +2,7 @@
 #include <vector>
 #include <fstream>
 #include "../Server/encoder.h"
+#include "../Decoder/Decoder.h"
 using namespace std;
 
 std::unordered_map <string, int> dedupTable1;
@@ -50,7 +51,10 @@ int main(void)
 	int offset = 0;
 	unsigned char* file;
 	std::ifstream myfile;
-	myfile.open("ESE532_fall.html");
+//	 myfile.open("ESE532_fall.html");
+//	myfile.open("ESE532_syllabus.html");
+//	 myfile.open("LittlePrince.txt");
+	 myfile.open("BenjiBro.txt");
 	std::string s;
 	file = (unsigned char*) malloc(sizeof(unsigned char) * 70000000);
 	char c;
@@ -90,7 +94,8 @@ int main(void)
 			//encoding(s.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),payload);
 			//const char *str = s.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]).c_str();
 			encoding(str + ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i],payload,&payloadlen);
-			payloadlen = (TableSize > 1) ? payloadlen + 1 : payloadlen;
+			cout<<"Chuck position : "<<ChunkBoundary[i]<<" chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[i]<<" LZW size " <<payloadlen<<" Table Size : "<<TableSize<<endl;
+//			payloadlen = (TableSize > 1) ? payloadlen + 1 : payloadlen;
 			header = ((payloadlen)<<1);
 			cout<<"Unique chunk ... "<<UniqueChunkId<<endl;
 		}
@@ -103,7 +108,7 @@ int main(void)
 		memcpy(&file[offset], &header, sizeof(header));
 		// cout << "-------header----------"<< header<<"=="<<(int)(*((int*)&file[offset]))<<endl;
 		offset +=  sizeof(header);
-		 cout<<"Chuck position : "<<ChunkBoundary[i]<<" chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[i]<<" LZW size " <<payloadlen<<endl;
+		//  cout<<"Chuck position : "<<ChunkBoundary[i]<<" chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[i]<<" LZW size " <<payloadlen<<" Table Size : "<<TableSize<<endl;
 		memcpy(&file[offset], &payload[0], payloadlen);
 		offset +=  payloadlen;
 		payloadlen = 0;
@@ -115,5 +120,7 @@ int main(void)
 	int bytes_written = fwrite(&file[0], 1, offset, outfd);
 	printf("write file with %d\n", bytes_written);
 	fclose(outfd);
+
+	main2("output_cpu.bin", "output_fpga.txt");
 	return 0;
 }
