@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Messages>
-	<Message severity="WARNING" prefix="[HLS 200-40]" key="HLS_40_1850" tag="" content="Skipped source file &apos;LittlePrince.txt&apos;. Source files must have extensions .c, .C, .cc, .cpp, .c++, .cp, or .cxx." resolution=""/>
-	<Message severity="INFO" prefix="[HLS 200-111]" key="HLS_111_966" tag="RUNTIME" content="Finished File checks and directory preparation: CPU user time: 0.01 seconds. CPU system time: 0 seconds. Elapsed time: 0.02 seconds; current allocated memory: 208.176 MB." resolution=""/>
-	<Message severity="INFO" prefix="[HLS 200-10]" key="HLS_10_1312" tag="" content="Analyzing design file &apos;Server/server.cpp&apos; ..." resolution=""/>
-	<Message severity="INFO" prefix="[HLS 200-10]" key="HLS_10_1312" tag="" content="Analyzing design file &apos;Server/encoder.cpp&apos; ..." resolution=""/>
-	<Message severity="INFO" prefix="[HLS 200-10]" key="HLS_10_1312" tag="" content="Analyzing design file &apos;SHA_algorithm/SHA256.cpp&apos; ..." resolution=""/>
-</Messages>
