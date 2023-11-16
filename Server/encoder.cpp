@@ -340,8 +340,8 @@ void encoding(const char* s1,int length,char *output_code,unsigned int *output_c
     {
         if(i + 1 == length)
         {
-            std::cout << prefix_code;
-            std::cout << " ";
+            // std::cout << prefix_code;
+            // std::cout << " ";
 			out_tmp[codelength++] = (prefix_code);
             break;
         }
@@ -353,8 +353,8 @@ void encoding(const char* s1,int length,char *output_code,unsigned int *output_c
         if(!hit)
         {
             out_tmp[codelength++] = prefix_code;
-            std::cout << prefix_code;
-            std::cout << " ";
+            // std::cout << prefix_code;
+            // std::cout << " ";
 
             bool collision = 0;
             insert(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, next_code, &collision);
@@ -375,19 +375,19 @@ void encoding(const char* s1,int length,char *output_code,unsigned int *output_c
         i += 1;
     }
     int k =0;
-    cout<<"Code length "<<codelength<<endl;
+    cout<<"...............Code length "<<codelength<<endl;
     for(int i =0;i< codelength;i++)
     {
        /*Change the endianness of output code*/
 	   char data1 = (out_tmp[i] & 0x0ff0) >> 4;
        char data2 = (out_tmp[i] & 0x000f) << 4;
 	   out_tmp[i] = (data2<<8)|(data1);
-	   if(!(i & 0x01))
+	   if(!(i & 0x01)) // Even
        {           /*lower 8-bits of 1st code*/
 		   output_code[k++] =(out_tmp[i] & 0xFF);
 		   output_code[k] = ((out_tmp[i] & 0xFF00)>>8);
        }
-       else
+       else // Odd
        {
             output_code[k++] |= ((out_tmp[i] & 0x00F0)>>4);
 			output_code[k] = (out_tmp[i]<<4);
@@ -395,8 +395,13 @@ void encoding(const char* s1,int length,char *output_code,unsigned int *output_c
        }
 
     }
-    *output_code_len = k;
-    cout<<"output code length"<<*output_code_len<<endl;
+    *output_code_len = (codelength % 2 != 0) ? ((codelength/2)*3) + 2 : ((codelength/2)*3);
+    // *output_code_len = k;
+    // if(codelength % 2 != 0) 
+    // {
+    //     output_code[++k] = 0; 
+    // }
+    cout<<"output code length"<<*output_code_len<<" entries in lzw code "<<k<<endl;
     std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
 }
 
