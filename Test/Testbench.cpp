@@ -52,9 +52,9 @@ int main(void)
 	unsigned char* file;
 	std::ifstream myfile;
 //	 myfile.open("ESE532_fall.html");
-//	myfile.open("ESE532_syllabus.html");
+	myfile.open("ESE532_syllabus.html");
 //	 myfile.open("LittlePrince.txt");
-	 myfile.open("BenjiBro.txt");
+//	 myfile.open("BenjiBro.txt");
 	std::string s;
 	file = (unsigned char*) malloc(sizeof(unsigned char) * 70000000);
 	char c;
