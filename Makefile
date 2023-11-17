@@ -35,7 +35,8 @@ VITIS_PLATFORM_DIR = ${PLATFORM_REPO_PATHS}
 VITIS_PLATFORM_PATH = $(VITIS_PLATFORM_DIR)/u96v2_sbc_base.xpfm
 
 # host compiler global settings
-CXXFLAGS += -march=armv8-a+simd -mtune=cortex-a53 -std=c++11 -DVITIS_PLATFORM=$(VITIS_PLATFORM) -D__USE_XOPEN2K8 -I$(XILINX_VIVADO)/include/ -I$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux/usr/include/xrt/ -O3 -g -Wall -c -fmessage-length=0 --sysroot=$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux
+#CXXFLAGS += -march=armv8-a+simd -mtune=cortex-a53 -std=c++11 -DVITIS_PLATFORM=$(VITIS_PLATFORM) -D__USE_XOPEN2K8 -I$(XILINX_VIVADO)/include/ -I$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux/usr/include/xrt/ -O3 -g -Wall -c -fmessage-length=0 --sysroot=$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux
+CXXFLAGS += -march=armv8-a+simd -mtune=cortex-a53 -std=c++11 -DVITIS_PLATFORM=$(VITIS_PLATFORM) -D__USE_XOPEN2K8 -I$(XILINX_VIVADO)/include/ -I$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux/usr/include/xrt/ -O3 -Wall -c -fmessage-length=0 --sysroot=$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux -I include/ -L lib/
 LDFLAGS += -lxilinxopencl -lpthread -lrt -ldl -lcrypt -lstdc++ -L$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux/usr/lib/ --sysroot=$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux
 
 # hardware compiler shared settings
@@ -78,7 +79,7 @@ TEST_SOURCES = Test_compression.cpp
 TEST_OBJECTS = Test.o #$(TEST_SOURCES: .cpp=.o)
 TEST_EXE = test
 
-ENCODER_SOURCES = $(SERVER_SOURCES) $(CDC_SOURCES) $(SHA_SOURCES) $(DEDUP_SOURCES) $(APP_SOURCES) #$(TEST_SOURCES)
+ENCODER_SOURCES = $(APP_SOURCES) $(SERVER_SOURCES) $(SHA_SOURCES) $(DEDUP_SOURCES)  #$(TEST_SOURCES)
 ENCODER_OBJECTS = $(ENCODER_SOURCES:.cpp=.o)
 ENCODER_EXE = encoder
 
@@ -98,14 +99,54 @@ $(CLIENT_EXE):
 
 $(ENCODER_EXE): $(ENCODER_OBJECTS)
 	$(HOST_CXX) -o "$@" $(+) $(LDFLAGS) 
-	# -@echo $(VPP) --package --config fpga/package.cfg --package.kernel_image $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/image/image.ub --package.rootfs $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/rootfs/rootfs.ext4 $(XCLBIN)
-	# -@$(VPP) --package --config fpga/package.cfg --package.sd_file "$@" --package.kernel_image $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/image/image.ub --package.rootfs $(PLATFORM_REPO_PATHS)/sw/ese532_hw6_pfm/linux_domain/rootfs/rootfs.ext4 $(XCLBIN)
 
 $(DECODER_EXE): $(DECODER_OBJECTS)
 	$(HOST_CXX) -o "$@" $(+) $(LDFLAGS)
 
 .cpp.o:
 	$(HOST_CXX) $(CXXFLAGS) -I./server -I./SHA_algorithm -o "$@" "$<"
+
+.PHONY: fpga clean
+fpga: package/sd_card.img
+
+.NOTPARALLEL: clean
+
+clean-host:
+	-$(RM) $(HOST_EXE) $(HOST_OBJECTS) 
+
+clean-accelerators:
+	-$(RM) $(XCLBIN) $(XO) $(ALL_MESSAGE_FILES)
+	-$(RM) *.xclbin.sh *.xclbin.info *.xclbin.link_summary* *.compile_summary
+#	-$(RMDIR) .Xil fpga/hls/proj_mmult
+
+clean-package:
+	-${RMDIR} package
+	-${RMDIR} package.build
+
+clean: clean-host clean-accelerators clean-package
+	-$(RM) *.log *.package_summary
+	-${RMDIR} _x .ipcache
+
+#
+# binary container: kernel.xclbin
+#
+
+$(XO): ./Server/encoder.cpp
+	-@$(RM) $@
+	$(VPP) $(VPP_OPTS) -k encoding --compile -I"$(<D)" --config ./design.cfg -o"$@" "$<"
+
+$(XCLBIN): $(XO)
+	-@$(RM) $@
+	$(VPP) $(VPP_OPTS) --link --config ./design.cfg -o"$@" $(+)
+
+package/sd_card.img: $(ENCODER_EXE) $(XCLBIN) ./xrt.ini
+	$(VPP) --package $(VPP_OPTS) --config ./package.cfg $(XCLBIN) \
+	       --package.out_dir package \
+	       --package.sd_file $(ENCODER_EXE)\
+	       --package.kernel_image $(PLATFORM_REPO_PATHS)/sw/u96v2_sbc_base/PetaLinux/image/image.ub \
+	       --package.rootfs ${PLATFORM_REPO_PATHS}/sw/u96v2_sbc_base/PetaLinux/rootfs/rootfs.ext4 \
+	       --package.sd_file $(XCLBIN) \
+	       --package.sd_file ./xrt.ini
 
 #
 # primary build targets
