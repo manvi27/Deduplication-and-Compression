@@ -137,8 +137,13 @@ void Swencoding(string s1,vector <char> &output)
 
 #define CAPACITY 32768 // hash output is 15 bits, and we have 1 entry per bucket, so capacity is 2^15
 //#define CAPACITY 4096
+<<<<<<< HEAD
 // try  uncommenting the line above and commenting line 6 to make the hash table smaller
 // and see what happens to the number of entries in the assoc mem
+=======
+// try  uncommenting the line above and commenting line 6 to make the hash table smaller 
+// and see what happens to the number of entries in the assoc mem 
+>>>>>>> main
 // (make sure to also comment line 27 and uncomment line 28)
 
 unsigned int my_hash(unsigned long key)
@@ -157,13 +162,21 @@ unsigned int my_hash(unsigned long key)
     hashed ^= hashed >> 11;
     hashed += hashed << 15;
     return hashed & 0x7FFF;          // hash output is 15 bits
+<<<<<<< HEAD
     //return hashed & 0xFFF;
+=======
+    //return hashed & 0xFFF;   
+>>>>>>> main
 }
 
 void hash_lookup(unsigned long* hash_table, unsigned int key, bool* hit, unsigned int* result)
 {
     //std::cout << "hash_lookup():" << std::endl;
+<<<<<<< HEAD
     key &= 0xFFFFF; // make sure key is only 20 bits
+=======
+    key &= 0xFFFFF; // make sure key is only 20 bits 
+>>>>>>> main
 
     unsigned long lookup = hash_table[my_hash(key)];
 
@@ -171,7 +184,11 @@ void hash_lookup(unsigned long* hash_table, unsigned int key, bool* hit, unsigne
     unsigned int stored_key = lookup&0xFFFFF;       // stored key is 20 bits
     unsigned int value = (lookup >> 20)&0xFFF;      // value is 12 bits
     unsigned int valid = (lookup >> (20 + 12))&0x1; // valid is 1 bit
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> main
     if(valid && (key == stored_key))
     {
         *hit = 1;
@@ -211,7 +228,11 @@ void hash_insert(unsigned long* hash_table, unsigned int key, unsigned int value
 }
 //****************************************************************************************************************
 typedef struct
+<<<<<<< HEAD
 {
+=======
+{   
+>>>>>>> main
     // Each key_mem has a 9 bit address (so capacity = 2^9 = 512)
     // and the key is 20 bits, so we need to use 3 key_mems to cover all the key bits.
     // The output width of each of these memories is 64 bits, so we can only store 64 key
@@ -219,9 +240,15 @@ typedef struct
 
     unsigned long upper_key_mem[512]; // the output of these  will be 64 bits wide (size of unsigned long).
     unsigned long middle_key_mem[512];
+<<<<<<< HEAD
     unsigned long lower_key_mem[512];
     unsigned int value[64];    // value store is 64 deep, because the lookup mems are 64 bits wide
     unsigned int fill;         // tells us how many entries we've currently stored
+=======
+    unsigned long lower_key_mem[512]; 
+    unsigned int value[64];    // value store is 64 deep, because the lookup mems are 64 bits wide
+    unsigned int fill;         // tells us how many entries we've currently stored 
+>>>>>>> main
 } assoc_mem;
 
 // cast to struct and use ap types to pull out various feilds.
@@ -265,7 +292,11 @@ void assoc_lookup(assoc_mem* mem, unsigned int key, bool* hit, unsigned int* res
     for(; address < 64; address++)
     {
         if((match >> address) & 0x1)
+<<<<<<< HEAD
         {
+=======
+        {   
+>>>>>>> main
             break;
         }
     }
@@ -300,6 +331,7 @@ void lookup(unsigned long* hash_table, assoc_mem* mem, unsigned int key, bool* h
         assoc_lookup(mem, key, hit, result);
     }
 }
+<<<<<<< HEAD
 
 #if KERNEL_TEST
 unsigned int output_code_len;
@@ -341,6 +373,15 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
     unsigned int out_tmp[4096];
     cout<<"input length"<<input_code_len<<endl;
     // cout<<"input length"<<length<<endl;
+=======
+//****************************************************************************************************************
+void hardware_encoding(std::string s1,vector <char> &output_code)
+{
+    // create hash table and assoc mem
+    unsigned long hash_table[CAPACITY];
+    assoc_mem my_assoc_mem;
+    vector <unsigned int> out_tmp;
+>>>>>>> main
     // make sure the memories are clear
     for(int i = 0; i < CAPACITY; i++)
     {
@@ -367,6 +408,7 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
     unsigned int prefix_code = s1[0];
     unsigned int code = 0;
     unsigned char next_char = 0;
+<<<<<<< HEAD
     int codelength = 0; /*length of lzw code*/
     int i = 0;
     prefix_code = (s1[0]);
@@ -384,6 +426,18 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
             // std::cout << prefix_code;
             // std::cout << " ";
 			out_tmp[codelength++] = (prefix_code);
+=======
+
+    int i = 0;
+    prefix_code = (s1[0]);
+	while(i < s1.length())
+    {
+        if(i + 1 == s1.length())
+        {
+            std::cout << prefix_code;
+            std::cout << " ";
+			out_tmp.push_back(prefix_code);
+>>>>>>> main
             break;
         }
         next_char = s1[i + 1];
@@ -393,13 +447,21 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
         lookup(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, &hit, &code);
         if(!hit)
         {
+<<<<<<< HEAD
             out_tmp[codelength++] = prefix_code;
             std::cout << prefix_code;
+=======
+            out_tmp.push_back(prefix_code);
+			std::cout << prefix_code;
+>>>>>>> main
             std::cout << " ";
 
             bool collision = 0;
             insert(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, next_code, &collision);
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
             if(collision)
             {
                 std::cout << "ERROR: FAILED TO INSERT! NO MORE ROOM IN ASSOC MEM!" << std::endl;
@@ -416,13 +478,18 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
         i += 1;
     }
     int k =0;
+<<<<<<< HEAD
     cout<<"...............Code length "<<codelength<<endl;
     for(int i =0;i< codelength;i++)
+=======
+    for(int i =0;i< out_tmp.size();i++)
+>>>>>>> main
     {
        /*Change the endianness of output code*/
 	   char data1 = (out_tmp[i] & 0x0ff0) >> 4;
        char data2 = (out_tmp[i] & 0x000f) << 4;
 	   out_tmp[i] = (data2<<8)|(data1);
+<<<<<<< HEAD
 	   if(!(i & 0x01)) // Even
        {           /*lower 8-bits of 1st code*/
 		   output_code[k++] =(out_tmp[i] & 0xFF);
@@ -450,6 +517,26 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
     // {
     //     output_code[++k] = 0; 
     // }
+=======
+	   if(!(i & 0x01))
+       {           /*lower 8-bits of 1st code*/
+		   output_code.push_back(out_tmp[i] & 0xFF);
+           k++;
+		   output_code.push_back((out_tmp[i] & 0xFF00)>>8);
+       }
+       else
+       {
+            output_code[k] |= ((out_tmp[i] & 0x00F0)>>4);
+			k++;
+			output_code.push_back(out_tmp[i]<<4);
+			output_code[k] |= ((out_tmp[i] >> 12) & 0x000F);
+			k++;
+       }
+       
+    }
+
+    std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
+>>>>>>> main
 }
 
 
@@ -577,6 +664,7 @@ void handle_input(int argc, char* argv[], char** filename,int* blocksize) {
 // 		pos += length;
 // 		int UniqueChunkId; 
 		
+<<<<<<< HEAD
 // 		int header;//header for writing back to file 
 // 		if((pos >= 8192)| (done))
 // 		{
@@ -607,6 +695,38 @@ void handle_input(int argc, char* argv[], char** filename,int* blocksize) {
 // 				{
 // 					// cout<<"Duplicate chunk\n";
 // 					header = (((UniqueChunkId)<<1) | 1);
+=======
+		int header;//header for writing back to file 
+		if((pos >= 8192)| (done))
+		{
+		    // cout << "----------done value "<<done <<endl;
+			ChunkBoundary.push_back(0);
+			cdc(ChunkBoundary, input_buffer ,pos);
+			if(128 == done)
+			{
+				ChunkBoundary.push_back(pos);
+			}
+			TotalChunksrcvd += ChunkBoundary.size() ;
+			for(int i = 0; i < ChunkBoundary.size() - 1; i++)
+            {
+                // printf("Point5\n");
+                /*reference for using chunks */
+                // cout <<ChunkBoundary[i + 1] - ChunkBoundary[i];
+				UniqueChunkId = runSHA(dedupTable, input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
+                        ChunkBoundary[i + 1] - ChunkBoundary[i]);
+				// cout<<input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]);
+				if(-1 == UniqueChunkId)
+				{
+					hardware_encoding(input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),payload);
+					// encoding(input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),payload);
+					header = ((payload.size())<<1);
+					// cout<<"Unique chunk\n";
+				}
+				else
+				{
+					// cout<<"Duplicate chunk\n";
+					header = (((UniqueChunkId)<<1) | 1);
+>>>>>>> main
 
 // 				}
 // 				memcpy(&file[offset], &header, sizeof(header));
