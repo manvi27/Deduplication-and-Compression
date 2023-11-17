@@ -93,11 +93,21 @@ int main(void)
 		{
 			//encoding(s.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),payload);
 			//const char *str = s.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]).c_str();
+#if KERNEL_TEST
+			SetInputCodeLen(ChunkBoundary[i + 1] - ChunkBoundary[i]);
+			encoding(str + ChunkBoundary[i], payload);
+			payloadlen = GetOnputCodeLen();
+			cout<<"Chuck position : "<<ChunkBoundary[i]<<" chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[i]<<" LZW size " <<payloadlen<<" Table Size : "<<TableSize<<endl;
+//			payloadlen = (TableSize > 1) ? payloadlen + 1 : payloadlen;
+			header = ((payloadlen)<<1);
+			cout<<"Unique chunk ... "<<UniqueChunkId<<endl;
+#else
 			encoding(str + ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i],payload,&payloadlen);
 			cout<<"Chuck position : "<<ChunkBoundary[i]<<" chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[i]<<" LZW size " <<payloadlen<<" Table Size : "<<TableSize<<endl;
 //			payloadlen = (TableSize > 1) ? payloadlen + 1 : payloadlen;
 			header = ((payloadlen)<<1);
 			cout<<"Unique chunk ... "<<UniqueChunkId<<endl;
+#endif
 		}
 		else
 		{
@@ -111,7 +121,12 @@ int main(void)
 		//  cout<<"Chuck position : "<<ChunkBoundary[i]<<" chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[i]<<" LZW size " <<payloadlen<<" Table Size : "<<TableSize<<endl;
 		memcpy(&file[offset], &payload[0], payloadlen);
 		offset +=  payloadlen;
+#if KERNEL_TEST
 		payloadlen = 0;
+		SetOnputCodeLen(0);
+#else
+		payloadlen = 0;
+#endif
 	}
 	myfile.close();
 

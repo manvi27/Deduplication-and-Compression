@@ -300,15 +300,47 @@ void lookup(unsigned long* hash_table, assoc_mem* mem, unsigned int key, bool* h
         assoc_lookup(mem, key, hit, result);
     }
 }
-//****************************************************************************************************************
-void encoding(const char* s1,int length,char *output_code,unsigned int *output_code_len)
+
+#if KERNEL_TEST
+unsigned int output_code_len;
+unsigned int GetOutputCodeLen(void)
 {
-    
+    return output_code_len;
+}
+
+void SetOutputCodeLen(unsigned int *val)
+{
+    output_code_len = val;
+    return;
+}
+
+unsigned int input_code_len;
+unsigned int GetInputCodeLen(void)
+{
+    return input_code_len;
+}
+
+void SetInputCodeLen(unsigned int val)
+{
+    input_code_len = val;
+    return;
+}
+#endif
+
+//****************************************************************************************************************
+#if KERNEL_TEST
+void encoding(const char* s1,char *output_code)
+{
+#else
+void encoding(const char* s1, int length, char *output_code,unsigned int *output_code_len)
+{
+#endif
     // create hash table and assoc mem
     unsigned long hash_table[CAPACITY];
     assoc_mem my_assoc_mem;
     unsigned int out_tmp[4096];
-    cout<<"input length"<<length<<endl;
+    cout<<"input length"<<input_code_len<<endl;
+    // cout<<"input length"<<length<<endl;
     // make sure the memories are clear
     for(int i = 0; i < CAPACITY; i++)
     {
@@ -338,9 +370,16 @@ void encoding(const char* s1,int length,char *output_code,unsigned int *output_c
     int codelength = 0; /*length of lzw code*/
     int i = 0;
     prefix_code = (s1[0]);
-	while(i < length)
+
+#if KERNEL_TEST
+	while(i < GetInputCodeLen())
+    {
+        if(i + 1 == GetInputCodeLen())
+#else
+    while(i < length)
     {
         if(i + 1 == length)
+#endif
         {
             // std::cout << prefix_code;
             // std::cout << " ";
@@ -397,14 +436,20 @@ void encoding(const char* s1,int length,char *output_code,unsigned int *output_c
        }
 
     }
+#if KERNEL_TEST
+    output_code_len = (codelength % 2 != 0) ? ((codelength/2)*3) + 2 : ((codelength/2)*3);
+    cout<<"output code length"<<output_code_len<<" entries in lzw code "<<k<<endl;
+    std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
+#else
     *output_code_len = (codelength % 2 != 0) ? ((codelength/2)*3) + 2 : ((codelength/2)*3);
+    cout<<"output code length"<<*output_code_len<<" entries in lzw code "<<k<<endl;
+    std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
+#endif
     // *output_code_len = k;
     // if(codelength % 2 != 0) 
     // {
     //     output_code[++k] = 0; 
     // }
-    cout<<"output code length"<<*output_code_len<<" entries in lzw code "<<k<<endl;
-    std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
 }
 
 

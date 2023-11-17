@@ -23,7 +23,17 @@
 #define NUM_ELEMENTS 16384
 #define HEADER 2
 
-void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_size);
-void encoding(const char* s1,int length,char *output_code, unsigned int *output_code_len);
+#define KERNEL_TEST 1
 
+#if KERNEL_TEST
+unsigned int GetOutputCodeLen(void);
+void SetOutputCodeLen(unsigned int *val);
+unsigned int GetInputCodeLen(void);
+void SetInputCodeLen(unsigned int *val);
+void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_size);
+void encoding(const char* s1, char *output_code);
+#else
+void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_size);
+void encoding(const char* s1, int length, char *output_code,unsigned int *output_code_len);
+#endif
 #endif
