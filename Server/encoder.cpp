@@ -660,6 +660,11 @@ void encoding(const char* s1,int length,char *output_code,unsigned int *output_c
     unsigned long hash_table[CAPACITY/BUCKET_SIZE][BUCKET_SIZE];
     assoc_mem my_assoc_mem;
     unsigned int out_tmp[4096];
+#if KERNEL_TEST
+    cout<<"input length"<<input_code_len<<endl;
+#else
+     cout<<"input length"<<length<<endl;
+#endif
     // make sure the memories are clear
     for(int i = 0; i < (CAPACITY/BUCKET_SIZE); i++)
         for(int j =0; j < BUCKET_SIZE;j++)

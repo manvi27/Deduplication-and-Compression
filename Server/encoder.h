@@ -23,7 +23,7 @@
 #define NUM_ELEMENTS 16384
 #define HEADER 2
 
-#define KERNEL_TEST 1
+#define KERNEL_TEST 0
 
 #if KERNEL_TEST
 unsigned int GetOutputCodeLen(void);

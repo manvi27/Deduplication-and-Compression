@@ -96,7 +96,7 @@ int main(void)
 #if KERNEL_TEST
 			SetInputCodeLen(ChunkBoundary[i + 1] - ChunkBoundary[i]);
 			encoding(str + ChunkBoundary[i], payload);
-			payloadlen = GetOnputCodeLen();
+			payloadlen = GetOutputCodeLen();
 			cout<<"Chuck position : "<<ChunkBoundary[i]<<" chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[i]<<" LZW size " <<payloadlen<<" Table Size : "<<TableSize<<endl;
 //			payloadlen = (TableSize > 1) ? payloadlen + 1 : payloadlen;
 			header = ((payloadlen)<<1);
@@ -123,7 +123,7 @@ int main(void)
 		offset +=  payloadlen;
 #if KERNEL_TEST
 		payloadlen = 0;
-		SetOnputCodeLen(0);
+		SetOutputCodeLen(0);
 #else
 		payloadlen = 0;
 #endif
@@ -136,6 +136,8 @@ int main(void)
 	printf("write file with %d\n", bytes_written);
 	fclose(outfd);
 
-	main2("output_cpu.bin", "output_fpga.txt");
+	char* OP_comp = "output_cpu.bin";
+	char* OP_uncomp = "output_fpga.txt";
+	main2(OP_comp, OP_uncomp);
 	return 0;
 }
