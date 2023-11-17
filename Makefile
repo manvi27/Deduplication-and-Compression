@@ -3,30 +3,19 @@
 help:
 	@echo "Makefile Usage:"
 	@echo ""
-	@echo "  make all"
-	@echo "      Command to build client, encoder and decoder."
+	@echo "  make fpga "
+	@echo "      Command to build sd card image: Filter_HW, Scale, Differentiate, Compress and Host.cpp"
 	@echo ""
-	@echo "  make clent"
-	@echo "      Command to build client."
-	@echo ""
-	@echo "  make encoder "
-	@echo "      Command to build encoder."
-	@echo ""
-	@echo "  make decoder "
-	@echo "      Command to build decoder."
+	@echo "  make host "
+	@echo "      Command to build only the host program of Filter_HW and ."
 	@echo ""
 	@echo "  make clean "
 	@echo "      Command to remove the generated files."
 	@echo ""
 #######################################################################################
 
-# compiler tools
-# XILINX_VITIS ?= /media/lilbirb/research/Xilinx/Vitis/2020.1
-# XILINX_VIVADO ?= /media/lilbirb/research/Xilinx/Vivado/2020.1
-# XILINX_VIVADO_HLS ?= $(XILINX_VITIS)/Vivado_HLS
-
 HOST_CXX ?= aarch64-linux-gnu-g++
-VPP ?= ${XILINX_VITIS}/bin/v++
+VPP = ${XILINX_VITIS}/bin/v++
 RM = rm -f
 RMDIR = rm -rf
 
@@ -35,76 +24,42 @@ VITIS_PLATFORM_DIR = ${PLATFORM_REPO_PATHS}
 VITIS_PLATFORM_PATH = $(VITIS_PLATFORM_DIR)/u96v2_sbc_base.xpfm
 
 # host compiler global settings
-#CXXFLAGS += -march=armv8-a+simd -mtune=cortex-a53 -std=c++11 -DVITIS_PLATFORM=$(VITIS_PLATFORM) -D__USE_XOPEN2K8 -I$(XILINX_VIVADO)/include/ -I$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux/usr/include/xrt/ -O3 -g -Wall -c -fmessage-length=0 --sysroot=$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux
-CXXFLAGS += -march=armv8-a+simd -mtune=cortex-a53 -std=c++11 -DVITIS_PLATFORM=$(VITIS_PLATFORM) -D__USE_XOPEN2K8 -I$(XILINX_VIVADO)/include/ -I$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux/usr/include/xrt/ -O3 -Wall -c -fmessage-length=0 --sysroot=$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux -I include/ -L lib/
-LDFLAGS += -lxilinxopencl -lpthread -lrt -ldl -lcrypt -lstdc++ -L$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux/usr/lib/ --sysroot=$(VITIS_PLATFORM_DIR)/sw/u96v2_sbc_base/PetaLinux/sysroot/aarch64-xilinx-linux
+CXXFLAGS += -march=armv8-a+simd -mtune=cortex-a53 -std=c++11 -DVITIS_PLATFORM=$(VITIS_PLATFORM) -D__USE_XOPEN2K8 -I$(XILINX_VIVADO)/include/ -I$(VITIS_PLATFORM_DIR)/sw/$(VITIS_PLATFORM)/PetaLinux/sysroot/aarch64-xilinx-linux/usr/include/xrt/ -O2 -g -Wall -c -fmessage-length=0 --sysroot=$(VITIS_PLATFORM_DIR)/sw/$(VITIS_PLATFORM)/PetaLinux/sysroot/aarch64-xilinx-linux
+LDFLAGS += -lxilinxopencl -lpthread -lrt -ldl -lcrypt -lstdc++ -L$(VITIS_PLATFORM_DIR)/sw/$(VITIS_PLATFORM)/PetaLinux/sysroot/aarch64-xilinx-linux/usr/lib/ --sysroot=$(VITIS_PLATFORM_DIR)/sw/$(VITIS_PLATFORM)/PetaLinux/sysroot/aarch64-xilinx-linux
 
 # hardware compiler shared settings
 VPP_OPTS = --target hw
 
+
 #
 # OpenCL kernel files
 #
-# XO := kernel.xo
-# XCLBIN := kernel.xclbin
-# ALL_MESSAGE_FILES = $(subst .xo,.mdb,$(XO)) $(subst .xclbin,.mdb,$(XCLBIN))
+XO := kernel.xo
+XCLBIN := kernel.xclbin
+ALL_MESSAGE_FILES = $(subst .xo,.mdb,$(XO)) $(subst .xclbin,.mdb,$(XCLBIN))
 
 #
 # host files
 #
-CLIENT_SOURCES = Client/client.cpp
-CLIENT_EXE = client
+HOST_SOURCES = ./App/Host.cpp  ./App/EventTimer.cpp ./App/Utilities.cpp ./Dedup/Dedup.cpp ./Server/encoder.cpp ./Server/server.cpp ./SHA_algorithm/SHA256.cpp 
+HOST_OBJECTS =$(HOST_SOURCES:.cpp=.o)
+HOST_EXE = host
 
-SERVER_SOURCES = Server/encoder.cpp Server/server.cpp
-SERVER_OBJECTS =$(SERVER_SOURCES:.cpp=.o)
-SERVER_EXE = server
+.PHONY: cpu
+cpu: $(CPU_EXE)
 
-APP_SOURCES = App/Host.cpp App/EventTimer.cpp App/Utilities.cpp
-APP_OBJECTS =$(APP_SOURCES:.cpp=.o)
-APP_EXE = app
+$(CPU_EXE): $(CPU_OBJECTS)
+	$(HOST_CXX) -I./ -I./App -I./Decoder -I./Server -I./Dedup -I./SHA_algorithm -o "$@" $(+) $(LDFLAGS)
 
-DECODER_SOURCES = Decoder/Decoder.cpp
-DECODER_OBJECTS =$(DECODER_SOURCES:.cpp=.o)
-DECODER_EXE = decoder
-
-SHA_SOURCES = SHA_algorithm/SHA256.cpp
-SHA_OBJECTS =$(SHA_SOURCES:.cpp=.o)
-SHA_EXE = sha
-
-DEDUP_SOURCES = Dedup/Dedup.cpp
-DEDUP_OBJECTS =$(DEDUP_SOURCES:.cpp=.o)
-DEDUP_EXE = dedup
-
-TEST_SOURCES = Test_compression.cpp
-TEST_OBJECTS = Test.o #$(TEST_SOURCES: .cpp=.o)
-TEST_EXE = test
-
-ENCODER_SOURCES = $(APP_SOURCES) $(SERVER_SOURCES) $(SHA_SOURCES) $(DEDUP_SOURCES)  #$(TEST_SOURCES)
-ENCODER_OBJECTS = $(ENCODER_SOURCES:.cpp=.o)
-ENCODER_EXE = encoder
-
-# CPU_SOURCES = cpu/Host.cpp ../../common/EventTimer.cpp ../../common/Utilities.cpp
-# CPU_OBJECTS=$(CPU_SOURCES:.cpp=.o)
-# CPU_EXE = mmult_cpu
-
-# .PHONY: cpu
-# cpu: $(CPU_EXE)
-
-# $(CPU_EXE): $(CPU_OBJECTS)
-# 	$(HOST_CXX) -I./fpga/hls/ -o "$@" $(+) $(LDFLAGS)
-all: $(CLIENT_EXE) $(ENCODER_EXE) $(DECODER_EXE)
-
-$(CLIENT_EXE):
-	g++ -O3 $(CLIENT_SOURCES) -o "$@" 
-
-$(ENCODER_EXE): $(ENCODER_OBJECTS)
-	$(HOST_CXX) -o "$@" $(+) $(LDFLAGS) 
-
-$(DECODER_EXE): $(DECODER_OBJECTS)
+$(HOST_EXE): $(HOST_OBJECTS)
 	$(HOST_CXX) -o "$@" $(+) $(LDFLAGS)
 
 .cpp.o:
-	$(HOST_CXX) $(CXXFLAGS) -I./server -I./SHA_algorithm -o "$@" "$<"
+	$(HOST_CXX) $(CXXFLAGS) -I./ -I./App -I./Client -I./Decoder -I./Server -I./Dedup -I./SHA_algorithm -o "$@" "$<"
+
+#
+# primary build targets
+#
 
 .PHONY: fpga clean
 fpga: package/sd_card.img
@@ -136,56 +91,13 @@ $(XO): ./Server/encoder.cpp
 	$(VPP) $(VPP_OPTS) -k encoding --compile -I"$(<D)" --config ./design.cfg -o"$@" "$<"
 
 $(XCLBIN): $(XO)
-	-@$(RM) $@
 	$(VPP) $(VPP_OPTS) --link --config ./design.cfg -o"$@" $(+)
 
-package/sd_card.img: $(ENCODER_EXE) $(XCLBIN) ./xrt.ini
+package/sd_card.img: $(HOST_EXE) $(XCLBIN) ./xrt.ini
 	$(VPP) --package $(VPP_OPTS) --config ./package.cfg $(XCLBIN) \
-	       --package.out_dir package \
-	       --package.sd_file $(ENCODER_EXE)\
-	       --package.kernel_image $(PLATFORM_REPO_PATHS)/sw/u96v2_sbc_base/PetaLinux/image/image.ub \
-	       --package.rootfs ${PLATFORM_REPO_PATHS}/sw/u96v2_sbc_base/PetaLinux/rootfs/rootfs.ext4 \
-	       --package.sd_file $(XCLBIN) \
-	       --package.sd_file ./xrt.ini
-
-#
-# primary build targets
-#
-
-# .PHONY: fpga clean
-# fpga: $(XCLBIN)
-
-.NOTPARALLEL: clean
-
-clean:
-	-$(RM) $(ENCODER_EXE) $(ENCODER_OBJECTS) $(DECODER_EXE) $(DECODER_OBJECTS) $(CLIENT_EXE)
-
-# clean-cpu:
-# 	-$(RM) $(CPU_EXE) $(CPU_OBJECTS) 
-
-# clean-host:
-# 	-$(RM) $(HOST_EXE) $(HOST_OBJECTS) 
-
-# clean-accelerators:
-# 	-$(RM) $(XCLBIN) $(XO) $(ALL_MESSAGE_FILES)
-# 	-$(RM) *.xclbin.sh *.xclbin.info *.xclbin.link_summary* *.compile_summary
-# 	-$(RMDIR) .Xil fpga/hls/proj_mmult
-
-# clean-package:
-# 	-${RMDIR} package
-# 	-${RMDIR} package.build
-
-# clean: clean-cpu clean-host clean-accelerators clean-package
-# 	-$(RM) *.log *.package_summary
-# 	-${RMDIR} _x .ipcache
-
-#
-# binary container: kernel.xclbin
-#
-
-# $(XO): fpga/hls/MMult.cpp
-# 	-@$(RM) $@
-# 	$(VPP) $(VPP_OPTS) -k mmult_fpga --compile -I"$(<D)" --config fpga/design.cfg -o"$@" "$<"
-# $(XCLBIN): $(XO)
-# 	$(VPP) $(VPP_OPTS) --link --config fpga/design.cfg -o"$@" $(+)
-
+		--package.out_dir package \
+		--package.sd_file $(HOST_EXE) \
+		--package.kernel_image $(PLATFORM_REPO_PATHS)/sw/$(VITIS_PLATFORM)/PetaLinux/image/image.ub \
+		--package.rootfs $(PLATFORM_REPO_PATHS)/sw/$(VITIS_PLATFORM)/PetaLinux/rootfs/rootfs.ext4 \
+		--package.sd_file $(XCLBIN) \
+		--package.sd_file ./xrt.ini

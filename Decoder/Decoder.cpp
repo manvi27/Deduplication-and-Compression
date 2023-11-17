@@ -1,9 +1,4 @@
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <stdint.h>
+#include "Decoder.h"
 using namespace std;
 #define CODE_LENGTH (12)
 
