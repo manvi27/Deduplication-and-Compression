@@ -135,10 +135,13 @@ void Swencoding(string s1,vector <char> &output)
 	cout<<endl;
 }
 
-#define CAPACITY 32768 // hash output is 15 bits, and we have 1 entry per bucket, so capacity is 2^15
+
+#define BUCKET_SIZE 2
+#define CAPACITY (32768*BUCKET_SIZE) // hash output is 15 bits, and we have 1 entry per bucket, so capacity is 2^15
+#define BUCKET_LIMIT 3
 //#define CAPACITY 4096
-// try  uncommenting the line above and commenting line 6 to make the hash table smaller 
-// and see what happens to the number of entries in the assoc mem 
+// try  uncommenting the line above and commenting line 6 to make the hash table smaller
+// and see what happens to the number of entries in the assoc mem
 // (make sure to also comment line 27 and uncomment line 28)
 
 unsigned int my_hash(unsigned long key)
@@ -157,46 +160,78 @@ unsigned int my_hash(unsigned long key)
     hashed ^= hashed >> 11;
     hashed += hashed << 15;
     return hashed & 0x7FFF;          // hash output is 15 bits
-    //return hashed & 0xFFF;   
+    //return hashed & 0xFFF;
 }
 
-void hash_lookup(unsigned long* hash_table, unsigned int key, bool* hit, unsigned int* result)
+void hash_lookup(unsigned long (&hash_table)[CAPACITY/BUCKET_SIZE][BUCKET_SIZE], unsigned int key, bool* hit, unsigned int* result)
 {
     //std::cout << "hash_lookup():" << std::endl;
-    key &= 0xFFFFF; // make sure key is only 20 bits 
+    key &= 0xFFFFF; // make sure key is only 20 bits
 
-    unsigned long lookup = hash_table[my_hash(key)];
-
-    // [valid][value][key]
-    unsigned int stored_key = lookup&0xFFFFF;       // stored key is 20 bits
-    unsigned int value = (lookup >> 20)&0xFFF;      // value is 12 bits
-    unsigned int valid = (lookup >> (20 + 12))&0x1; // valid is 1 bit
-    
-    if(valid && (key == stored_key))
+    unsigned long lookup = 0;//hash_table[my_hash(key)];
+    unsigned int stored_key = 0;
+    unsigned int value = 0;
+    unsigned int valid = 0;
+    for(int i = 0 ; i < BUCKET_SIZE; i++)
     {
-        *hit = 1;
-        *result = value;
-        //std::cout << "\thit the hash" << std::endl;
-        //std::cout << "\t(k,v,h) = " << key << " " << value << " " << my_hash(key) << std::endl;
-    }
-    else
-    {
-        *hit = 0;
-        *result = 0;
-        //std::cout << "\tmissed the hash" << std::endl;
+        lookup = hash_table[my_hash(key)][i];
+        // [valid][value][key]
+        stored_key = lookup&0xFFFFF;       // stored key is 20 bits
+        value = (lookup >> 20)&0xFFF;      // value is 12 bits
+        valid = (lookup >> (20 + 12))&BUCKET_LIMIT; // valid is 1 bit
+        if((valid == (1 << i)) && (key == stored_key))
+        {
+            *hit = true;
+            *result = value;
+            // std::cout << "\thit the hash" << std::endl;
+            //std::cout << "\t(k,v,h) = " << key << " " << value << " " << my_hash(key) << std::endl;
+            break;
+        }
+        else
+        {
+            *hit = false;
+            *result = 0;
+            //std::cout << "\tmissed the hash" << std::endl;
+        }
     }
 }
 
-void hash_insert(unsigned long* hash_table, unsigned int key, unsigned int value, bool* collision)
+void hash_insert(unsigned long (&hash_table)[CAPACITY/BUCKET_SIZE][BUCKET_SIZE], unsigned int key, unsigned int value, bool* collision)
 {
     //std::cout << "hash_insert():" << std::endl;
     key &= 0xFFFFF;   // make sure key is only 20 bits
     value &= 0xFFF;   // value is only 12 bits
-
-    unsigned long lookup = hash_table[my_hash(key)];
-    unsigned int valid = (lookup >> (20 + 12))&0x1;
-
-    if(valid)
+    int Bucketfill = 0;
+    unsigned long lookup;// = hash_table[my_hash(key)];
+    unsigned int valid;// = (lookup >> (20 + 12))&0x1;
+    for(int i = 0; i < BUCKET_SIZE; i++)
+    {
+        lookup = hash_table[my_hash(key)][i];
+        valid = (lookup >> (20 + 12))&BUCKET_LIMIT; /*read last 2-bits: if 01 - entry 0 else entry 1*/
+        //cout<<".....Valid "<<valid<<endl;
+        if(valid == 1<<i)
+        {
+            // cout<<"avbnnm "<<i <<Bucketfill<<endl;
+            Bucketfill++;
+        }
+        // printf("value checked before insertion = %lX. Bucketfill = %d valid = %x\n",hash_table[my_hash(key)][Bucketfill],Bucketfill,valid);
+        //printf("value checked before insertion = 0x%lX... Bucketfill = %d valid = %x\n",lookup,Bucketfill,valid);
+    }
+   
+    if(Bucketfill >= BUCKET_SIZE)
+    {
+        *collision = true;
+        // printf("\nCollision\n");
+    }
+    else
+    {
+        hash_table[my_hash(key)][Bucketfill] = (1UL << (20 + 12 + (Bucketfill))) | (value << 20) | key;
+        // printf("value checked after insertion = %lX. Bucketfill = %d valid = %x...myhashkey - %lX\n",hash_table[my_hash(key)][Bucketfill],Bucketfill,valid,my_hash(key));
+        // cout<<"value inserted before insertion"<<hash_table[my_hash(key)][Bucketfill]<<"Bucketfill"<<Bucketfill<<endl;
+        *collision = false;
+    }
+   
+    /*if(valid)
     {
         *collision = 1;
         //std::cout << "\tcollision in the hash" << std::endl;
@@ -207,11 +242,11 @@ void hash_insert(unsigned long* hash_table, unsigned int key, unsigned int value
         *collision = 0;
         //std::cout << "\tinserted into the hash table" << std::endl;
         //std::cout << "\t(k,v,h) = " << key << " " << value << " " << my_hash(key) << std::endl;
-    }
+    }*/
 }
 //****************************************************************************************************************
 typedef struct
-{   
+{
     // Each key_mem has a 9 bit address (so capacity = 2^9 = 512)
     // and the key is 20 bits, so we need to use 3 key_mems to cover all the key bits.
     // The output width of each of these memories is 64 bits, so we can only store 64 key
@@ -219,9 +254,9 @@ typedef struct
 
     unsigned long upper_key_mem[512]; // the output of these  will be 64 bits wide (size of unsigned long).
     unsigned long middle_key_mem[512];
-    unsigned long lower_key_mem[512]; 
+    unsigned long lower_key_mem[512];
     unsigned int value[64];    // value store is 64 deep, because the lookup mems are 64 bits wide
-    unsigned int fill;         // tells us how many entries we've currently stored 
+    unsigned int fill;         // tells us how many entries we've currently stored
 } assoc_mem;
 
 // cast to struct and use ap types to pull out various feilds.
@@ -239,13 +274,14 @@ void assoc_insert(assoc_mem* mem,  unsigned int key, unsigned int value, bool* c
         mem->lower_key_mem[(key >> 0)%512] |= (1 << mem->fill);   // set the fill'th bit to 1, while preserving everything else
         mem->value[mem->fill] = value;
         mem->fill++;
-        *collision = 0;
+        *collision = false;
         //std::cout << "\tinserted into the assoc mem" << std::endl;
         //std::cout << "\t(k,v) = " << key << " " << value << std::endl;
     }
     else
     {
-        *collision = 1;
+        *collision = true;
+       
         //std::cout << "\tcollision in the assoc mem" << std::endl;
     }
 }
@@ -265,7 +301,7 @@ void assoc_lookup(assoc_mem* mem, unsigned int key, bool* hit, unsigned int* res
     for(; address < 64; address++)
     {
         if((match >> address) & 0x1)
-        {   
+        {
             break;
         }
     }
@@ -283,7 +319,7 @@ void assoc_lookup(assoc_mem* mem, unsigned int key, bool* hit, unsigned int* res
     }
 }
 //****************************************************************************************************************
-void insert(unsigned long* hash_table, assoc_mem* mem, unsigned int key, unsigned int value, bool* collision)
+void insert(unsigned long (&hash_table)[CAPACITY/BUCKET_SIZE][BUCKET_SIZE], assoc_mem* mem, unsigned int key, unsigned int value, bool* collision)
 {
     hash_insert(hash_table, key, value, collision);
     if(*collision)
@@ -292,7 +328,7 @@ void insert(unsigned long* hash_table, assoc_mem* mem, unsigned int key, unsigne
     }
 }
 
-void lookup(unsigned long* hash_table, assoc_mem* mem, unsigned int key, bool* hit, unsigned int* result)
+void lookup(unsigned long (&hash_table)[CAPACITY/BUCKET_SIZE][BUCKET_SIZE], assoc_mem* mem, unsigned int key, bool* hit, unsigned int* result)
 {
     hash_lookup(hash_table, key, hit, result);
     if(!*hit)
@@ -336,16 +372,15 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
 {
 #endif
     // create hash table and assoc mem
-    unsigned long hash_table[CAPACITY];
+    unsigned long hash_table[CAPACITY/BUCKET_SIZE][BUCKET_SIZE];
     assoc_mem my_assoc_mem;
     unsigned int out_tmp[4096];
     cout<<"input length"<<input_code_len<<endl;
     // cout<<"input length"<<length<<endl;
     // make sure the memories are clear
-    for(int i = 0; i < CAPACITY; i++)
-    {
-        hash_table[i] = 0;
-    }
+    for(int i = 0; i < (CAPACITY/BUCKET_SIZE); i++)
+        for(int j =0; j < BUCKET_SIZE;j++)
+            hash_table[i][j] = 0;
     my_assoc_mem.fill = 0;
     for(int i = 0; i < 512; i++)
     {
@@ -399,6 +434,7 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
 
             bool collision = 0;
             insert(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, next_code, &collision);
+
             if(collision)
             {
                 std::cout << "ERROR: FAILED TO INSERT! NO MORE ROOM IN ASSOC MEM!" << std::endl;
@@ -450,8 +486,6 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
     //     output_code[++k] = 0; 
     // }
 }
-
-
 
 
 
