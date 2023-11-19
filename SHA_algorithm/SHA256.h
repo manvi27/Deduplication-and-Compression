@@ -51,6 +51,26 @@ private:
 	void pad();
 	void revert(std::array<uint8_t, 32> & hash);
 };
+/****************************** MACROS ******************************/
+#define SHA256_BLOCK_SIZE 32            // SHA256 outputs a 32 byte digest
+
+/**************************** DATA TYPES ****************************/
+typedef unsigned char BYTE;             // 8-bit byte
+typedef unsigned int  WORD;             // 32-bit word, change to "long" for 16-bit machines
+
+typedef struct {
+	BYTE data[64];
+	WORD datalen;
+	unsigned long long bitlen;
+	WORD state[8];
+} SHA256_CTX;
+
+/*********************** FUNCTION DECLARATIONS **********************/
+void sha256_init(SHA256_CTX *ctx);
+void sha256_update(SHA256_CTX *ctx, const BYTE data[], size_t len);
+void sha256_final(SHA256_CTX *ctx, BYTE hash[]);
+void sha256_hash(SHA256_CTX* ctx, const BYTE data[], BYTE hash[], size_t runLen);
+void sha256_hash_file(SHA256_CTX* ctx, const BYTE data[], BYTE hash[], size_t dataLen);
 
 void sha256_process_arm(uint32_t *state, string data, uint32_t length);
 int runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length);
