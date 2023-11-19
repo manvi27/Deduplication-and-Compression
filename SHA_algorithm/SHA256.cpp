@@ -11,6 +11,7 @@
 #include <sstream>
 #include <iostream>
 #include "SHA256.h"
+#include "SHA_Test.h"
 #include "../Dedup/Dedup.h"
 
 static const uint32_t K256[] =
@@ -173,27 +174,33 @@ int main(int argc, char* argv[])
 
 int runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length)
 {
-	/* initial state */
+	
+    SHA256_CTX ctx;
+    unsigned char hashData[32];
+    const unsigned char *str = (unsigned char*)data.c_str();
+    sha256_hash_file(&ctx, str, hashData, length);
+    
+    /* initial state */
     int32_t ChunkId;
     uint32_t state[8] = {
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     };
 // printf("SHAPoint0");
-	sha256_process(state, data, length);
-	char hashData[32];
-	for(size_t i = 0; i < 8; ++i) {
-		hashData[4*i + 0] = (char) (state[i] >> 24);
-		hashData[4*i+1] = (char) (state[i] >> 16);
-		hashData[4*i+2] = (char) (state[i] >> 8);
-		hashData[4*i+3] = (char) (state[i] >> 0);
-	}
+	// sha256_process(state, data, length);
+	
+	// for(size_t i = 0; i < 8; ++i) {
+	// 	hashData[4*i + 0] = (char) (state[i] >> 24);
+	// 	hashData[4*i+1] = (char) (state[i] >> 16);
+	// 	hashData[4*i+2] = (char) (state[i] >> 8);
+	// 	hashData[4*i+3] = (char) (state[i] >> 0);
+	// }
 // printf("SHAPoint2");
 string xyz = "";
     //  cout << data <<endl;
     for(int i = 0; i < 32; ++i) {
         xyz += hashData[i];
-        // printf("%X ",hashData[i]);
+        printf("%X ",hashData[i]);
        // printf("0x%02X ", hashData[i]);
         
     }
