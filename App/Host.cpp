@@ -246,8 +246,9 @@ int main(int argc, char* argv[])
 	int blocksize = BLOCKSIZE;
     char* filename = strdup("vmlinuz.tar");
 	// set blocksize if decalred through command line
-	handle_input(argc, argv, &filename,&blocksize);
-    FILE *outfd = fopen(filename, "wb");
+	// handle_input(argc, argv, &filename,&blocksize);
+	blocksize = (argc < 3)?blocksize:(*(int*)argv[2]);
+    FILE *outfd = fopen(argv[1], "wb");
     if(outfd == NULL)
    {
 	    perror("invalid output file");
