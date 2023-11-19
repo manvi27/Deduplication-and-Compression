@@ -24,7 +24,7 @@
 #define usr_code
 using namespace std;
 int offset = 0;
-unsigned char* file;
+// unsigned char* file;
 
 #ifdef usr_code
 
@@ -52,13 +52,13 @@ void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_siz
 	// put your cdc implementation here
     uint64_t i;
 	// printf("buff length passed = %d\n",buff_size);
-    uint32_t prevBoundary = ChunkBoundary.size();
+    uint32_t prevBoundary = ChunkBoundary[0];
 
 	for(i = WIN_SIZE; i < buff_size - WIN_SIZE; i++)
 	{
-		if((hash_func(buff,i) % MODULUS) == 0 || (i - prevBoundary == 4096))
+		if(((hash_func(buff,i) % MODULUS) == 0) || (i - prevBoundary == 4096))
         {
-			// printf("chunk boundary at%ld\n",i);
+		   printf("chunk boundary at%ld\n",i-prevBoundary);
 			ChunkBoundary.push_back(i);
             prevBoundary = i;
 		}
@@ -134,324 +134,6 @@ void Swencoding(string s1,vector <char> &output)
     //return output_code;
 	cout<<endl;
 }
-
-#define CAPACITY 32768 // hash output is 15 bits, and we have 1 entry per bucket, so capacity is 2^15
-//#define CAPACITY 4096
-// try  uncommenting the line above and commenting line 6 to make the hash table smaller 
-// and see what happens to the number of entries in the assoc mem 
-// (make sure to also comment line 27 and uncomment line 28)
-
-unsigned int my_hash(unsigned long key)
-{
-    key &= 0xFFFFF; // make sure the key is only 20 bits
-
-    unsigned int hashed = 0;
-
-    for(int i = 0; i < 20; i++)
-    {
-        hashed += (key >> i)&0x01;
-        hashed += hashed << 10;
-        hashed ^= hashed >> 6;
-    }
-    hashed += hashed << 3;
-    hashed ^= hashed >> 11;
-    hashed += hashed << 15;
-    return hashed & 0x7FFF;          // hash output is 15 bits
-    //return hashed & 0xFFF;   
-}
-
-void hash_lookup(unsigned long* hash_table, unsigned int key, bool* hit, unsigned int* result)
-{
-    //std::cout << "hash_lookup():" << std::endl;
-    key &= 0xFFFFF; // make sure key is only 20 bits 
-
-    unsigned long lookup = hash_table[my_hash(key)];
-
-    // [valid][value][key]
-    unsigned int stored_key = lookup&0xFFFFF;       // stored key is 20 bits
-    unsigned int value = (lookup >> 20)&0xFFF;      // value is 12 bits
-    unsigned int valid = (lookup >> (20 + 12))&0x1; // valid is 1 bit
-    
-    if(valid && (key == stored_key))
-    {
-        *hit = 1;
-        *result = value;
-        //std::cout << "\thit the hash" << std::endl;
-        //std::cout << "\t(k,v,h) = " << key << " " << value << " " << my_hash(key) << std::endl;
-    }
-    else
-    {
-        *hit = 0;
-        *result = 0;
-        //std::cout << "\tmissed the hash" << std::endl;
-    }
-}
-
-void hash_insert(unsigned long* hash_table, unsigned int key, unsigned int value, bool* collision)
-{
-    //std::cout << "hash_insert():" << std::endl;
-    key &= 0xFFFFF;   // make sure key is only 20 bits
-    value &= 0xFFF;   // value is only 12 bits
-
-    unsigned long lookup = hash_table[my_hash(key)];
-    unsigned int valid = (lookup >> (20 + 12))&0x1;
-
-    if(valid)
-    {
-        *collision = 1;
-        //std::cout << "\tcollision in the hash" << std::endl;
-    }
-    else
-    {
-        hash_table[my_hash(key)] = (1UL << (20 + 12)) | (value << 20) | key;
-        *collision = 0;
-        //std::cout << "\tinserted into the hash table" << std::endl;
-        //std::cout << "\t(k,v,h) = " << key << " " << value << " " << my_hash(key) << std::endl;
-    }
-}
-//****************************************************************************************************************
-typedef struct
-{   
-    // Each key_mem has a 9 bit address (so capacity = 2^9 = 512)
-    // and the key is 20 bits, so we need to use 3 key_mems to cover all the key bits.
-    // The output width of each of these memories is 64 bits, so we can only store 64 key
-    // value pairs in our associative memory map.
-
-    unsigned long upper_key_mem[512]; // the output of these  will be 64 bits wide (size of unsigned long).
-    unsigned long middle_key_mem[512];
-    unsigned long lower_key_mem[512]; 
-    unsigned int value[64];    // value store is 64 deep, because the lookup mems are 64 bits wide
-    unsigned int fill;         // tells us how many entries we've currently stored 
-} assoc_mem;
-
-// cast to struct and use ap types to pull out various feilds.
-
-void assoc_insert(assoc_mem* mem,  unsigned int key, unsigned int value, bool* collision)
-{
-    //std::cout << "assoc_insert():" << std::endl;
-    key &= 0xFFFFF; // make sure key is only 20 bits
-    value &= 0xFFF;   // value is only 12 bits
-
-    if(mem->fill < 64)
-    {
-        mem->upper_key_mem[(key >> 18)%512] |= (1 << mem->fill);  // set the fill'th bit to 1, while preserving everything else
-        mem->middle_key_mem[(key >> 9)%512] |= (1 << mem->fill);  // set the fill'th bit to 1, while preserving everything else
-        mem->lower_key_mem[(key >> 0)%512] |= (1 << mem->fill);   // set the fill'th bit to 1, while preserving everything else
-        mem->value[mem->fill] = value;
-        mem->fill++;
-        *collision = 0;
-        //std::cout << "\tinserted into the assoc mem" << std::endl;
-        //std::cout << "\t(k,v) = " << key << " " << value << std::endl;
-    }
-    else
-    {
-        *collision = 1;
-        //std::cout << "\tcollision in the assoc mem" << std::endl;
-    }
-}
-
-void assoc_lookup(assoc_mem* mem, unsigned int key, bool* hit, unsigned int* result)
-{
-    //std::cout << "assoc_lookup():" << std::endl;
-    key &= 0xFFFFF; // make sure key is only 20 bits
-
-    unsigned int match_high = mem->upper_key_mem[(key >> 18)%512];
-    unsigned int match_middle = mem->middle_key_mem[(key >> 9)%512];
-    unsigned int match_low  = mem->lower_key_mem[(key >> 0)%512];
-
-    unsigned int match = match_high & match_middle & match_low;
-
-    unsigned int address = 0;
-    for(; address < 64; address++)
-    {
-        if((match >> address) & 0x1)
-        {   
-            break;
-        }
-    }
-    if(address != 64)
-    {
-        *result = mem->value[address];
-        *hit = 1;
-        //std::cout << "\thit the assoc" << std::endl;
-        //std::cout << "\t(k,v) = " << key << " " << *result << std::endl;
-    }
-    else
-    {
-        *hit = 0;
-        //std::cout << "\tmissed the assoc" << std::endl;
-    }
-}
-//****************************************************************************************************************
-void insert(unsigned long* hash_table, assoc_mem* mem, unsigned int key, unsigned int value, bool* collision)
-{
-    hash_insert(hash_table, key, value, collision);
-    if(*collision)
-    {
-        assoc_insert(mem, key, value, collision);
-    }
-}
-
-void lookup(unsigned long* hash_table, assoc_mem* mem, unsigned int key, bool* hit, unsigned int* result)
-{
-    hash_lookup(hash_table, key, hit, result);
-    if(!*hit)
-    {
-        assoc_lookup(mem, key, hit, result);
-    }
-}
-
-#if KERNEL_TEST
-unsigned int output_code_len;
-unsigned int GetOutputCodeLen(void)
-{
-    return output_code_len;
-}
-
-void SetOutputCodeLen(unsigned int *val)
-{
-    output_code_len = val;
-    return;
-}
-
-unsigned int input_code_len;
-unsigned int GetInputCodeLen(void)
-{
-    return input_code_len;
-}
-
-void SetInputCodeLen(unsigned int val)
-{
-    input_code_len = val;
-    return;
-}
-#endif
-
-//****************************************************************************************************************
-#if KERNEL_TEST
-void encoding(const char* s1,char *output_code)
-{
-#else
-void encoding(const char* s1, int length, char *output_code,unsigned int *output_code_len)
-{
-#endif
-    // create hash table and assoc mem
-    unsigned long hash_table[CAPACITY];
-    assoc_mem my_assoc_mem;
-    unsigned int out_tmp[4096];
-    cout<<"input length"<<input_code_len<<endl;
-    // cout<<"input length"<<length<<endl;
-    // make sure the memories are clear
-    for(int i = 0; i < CAPACITY; i++)
-    {
-        hash_table[i] = 0;
-    }
-    my_assoc_mem.fill = 0;
-    for(int i = 0; i < 512; i++)
-    {
-        my_assoc_mem.upper_key_mem[i] = 0;
-        my_assoc_mem.middle_key_mem[i] = 0;
-        my_assoc_mem.lower_key_mem[i] = 0;
-    }
-
-    // init the memories with the first 256 codes
-    for(unsigned long i = 0; i < 256; i++)
-    {
-        bool collision = 0;
-        unsigned int key = (i << 8) + 0UL; // lower 8 bits are the next char, the upper bits are the prefix code
-        insert(hash_table, &my_assoc_mem, key, i, &collision);
-    }
-    int next_code = 256;
-
-
-    unsigned int prefix_code = s1[0];
-    unsigned int code = 0;
-    unsigned char next_char = 0;
-    int codelength = 0; /*length of lzw code*/
-    int i = 0;
-    prefix_code = (s1[0]);
-
-#if KERNEL_TEST
-	while(i < GetInputCodeLen())
-    {
-        if(i + 1 == GetInputCodeLen())
-#else
-    while(i < length)
-    {
-        if(i + 1 == length)
-#endif
-        {
-            // std::cout << prefix_code;
-            // std::cout << " ";
-			out_tmp[codelength++] = (prefix_code);
-            break;
-        }
-        next_char = s1[i + 1];
-
-        bool hit = 0;
-        //std::cout << "prefix_code " << prefix_code << " next_char " << next_char << std::endl;
-        lookup(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, &hit, &code);
-        if(!hit)
-        {
-            out_tmp[codelength++] = prefix_code;
-            std::cout << prefix_code;
-            std::cout << " ";
-
-            bool collision = 0;
-            insert(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, next_code, &collision);
-            if(collision)
-            {
-                std::cout << "ERROR: FAILED TO INSERT! NO MORE ROOM IN ASSOC MEM!" << std::endl;
-                return;
-            }
-            next_code += 1;
-
-            prefix_code = next_char;
-        }
-        else
-        {
-            prefix_code = code;
-        }
-        i += 1;
-    }
-    int k =0;
-    cout<<"...............Code length "<<codelength<<endl;
-    for(int i =0;i< codelength;i++)
-    {
-       /*Change the endianness of output code*/
-	   char data1 = (out_tmp[i] & 0x0ff0) >> 4;
-       char data2 = (out_tmp[i] & 0x000f) << 4;
-	   out_tmp[i] = (data2<<8)|(data1);
-	   if(!(i & 0x01)) // Even
-       {           /*lower 8-bits of 1st code*/
-		   output_code[k++] =(out_tmp[i] & 0xFF);
-		   output_code[k] = ((out_tmp[i] & 0xFF00)>>8);
-       }
-       else // Odd
-       {
-            output_code[k++] |= ((out_tmp[i] & 0x00F0)>>4);
-			output_code[k] = (out_tmp[i]<<4);
-			output_code[k++] |= ((out_tmp[i] >> 12) & 0x000F);
-       }
-
-    }
-#if KERNEL_TEST
-    output_code_len = (codelength % 2 != 0) ? ((codelength/2)*3) + 2 : ((codelength/2)*3);
-    cout<<"output code length"<<output_code_len<<" entries in lzw code "<<k<<endl;
-    std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
-#else
-    *output_code_len = (codelength % 2 != 0) ? ((codelength/2)*3) + 2 : ((codelength/2)*3);
-    cout<<"output code length"<<*output_code_len<<" entries in lzw code "<<k<<endl;
-    std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
-#endif
-    // *output_code_len = k;
-    // if(codelength % 2 != 0) 
-    // {
-    //     output_code[++k] = 0; 
-    // }
-}
-
-
 
 #define BUCKET_SIZE 2
 #define CAPACITY (32768*BUCKET_SIZE) // hash output is 15 bits, and we have 1 entry per bucket, so capacity is 2^15
@@ -655,16 +337,12 @@ void lookup(unsigned long (&hash_table)[CAPACITY/BUCKET_SIZE][BUCKET_SIZE], asso
 }
 //****************************************************************************************************************
 void encoding(const char* s1,int length,char *output_code,unsigned int *output_code_len)
+void encoding(const char* s1,int length,char *output_code,unsigned int *output_code_len)
 {
     // create hash table and assoc mem
     unsigned long hash_table[CAPACITY/BUCKET_SIZE][BUCKET_SIZE];
     assoc_mem my_assoc_mem;
-    unsigned int out_tmp[4096];
-#if KERNEL_TEST
-    cout<<"input length"<<input_code_len<<endl;
-#else
-     cout<<"input length"<<length<<endl;
-#endif
+    unsigned int out_tmp[8192];
     // make sure the memories are clear
     for(int i = 0; i < (CAPACITY/BUCKET_SIZE); i++)
         for(int j =0; j < BUCKET_SIZE;j++)
@@ -687,19 +365,18 @@ void encoding(const char* s1,int length,char *output_code,unsigned int *output_c
     int next_code = 256;
 
 
-    unsigned int prefix_code = s1[0];
+    unsigned int prefix_code = (unsigned char)s1[0];
     unsigned int code = 0;
     unsigned char next_char = 0;
     int codelength = 0; /*length of lzw code*/
     int i = 0;
-    prefix_code = (s1[0]);
 while(i < length)
     {
         if(i + 1 == length)
         {
              std::cout << prefix_code;
              std::cout << " ";
-out_tmp[codelength++] = (prefix_code);
+out_tmp[codelength++] = (prefix_code)&0xFFF;
             break;
         }
         next_char = s1[i + 1];
@@ -709,7 +386,7 @@ out_tmp[codelength++] = (prefix_code);
         lookup(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, &hit, &code);
         if(!hit)
         {
-            out_tmp[codelength++] = prefix_code;
+            out_tmp[codelength++] = prefix_code&0xFFF;
             std::cout << prefix_code;
             std::cout << " ";
 
@@ -746,7 +423,21 @@ out_tmp[codelength++] = (prefix_code);
       }
       else // Odd
       {
+      /*Change the endianness of output code*/
+  char data1 = (out_tmp[i] & 0x0ff0) >> 4;
+      char data2 = (out_tmp[i] & 0x000f) << 4;
+  out_tmp[i] = (data2<<8)|(data1);
+  if(!(i & 0x01)) // Even
+      {           /*lower 8-bits of 1st code*/
+  output_code[k++] =(out_tmp[i] & 0xFF);
+  output_code[k] = ((out_tmp[i] & 0xFF00)>>8);
+      }
+      else // Odd
+      {
             output_code[k++] |= ((out_tmp[i] & 0x00F0)>>4);
+output_code[k] = (out_tmp[i]<<4);
+output_code[k++] |= ((out_tmp[i] >> 12) & 0x000F);
+      }
 output_code[k] = (out_tmp[i]<<4);
 output_code[k++] |= ((out_tmp[i] >> 12) & 0x000F);
       }
@@ -755,12 +446,17 @@ output_code[k++] |= ((out_tmp[i] >> 12) & 0x000F);
     *output_code_len = (codelength % 2 != 0) ? ((codelength/2)*3) + 2 : ((codelength/2)*3);
     // *output_code_len = k;
     // if(codelength % 2 != 0)
+    // if(codelength % 2 != 0)
     // {
+    //     output_code[++k] = 0;
     //     output_code[++k] = 0;
     // }
     cout<<"output code length"<<*output_code_len<<" entries in lzw code "<<k<<endl;
     std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
+    cout<<"output code length"<<*output_code_len<<" entries in lzw code "<<k<<endl;
+    std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
 }
+
 
 
 
