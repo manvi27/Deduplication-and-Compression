@@ -86,6 +86,8 @@ clean: clean-host clean-accelerators clean-package
 # binary container: kernel.xclbin
 #
 
+all: fpga host
+
 $(XO): ./Server/encoder.cpp
 	-@$(RM) $@
 	$(VPP) $(VPP_OPTS) -k encoding --compile -I"$(<D)" --config ./design.cfg -o"$@" "$<"
