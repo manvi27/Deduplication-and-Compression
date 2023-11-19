@@ -15,6 +15,7 @@
 #include "../SHA_algorithm/SHA256.h"
 #include "../Server/encoder.h"
 #include "Utilities.h"
+#include "EventTimer.h"
 #include "Host.h"
 #define MAX_CHUNK_SIZE 4096
 #define LZW_HW_KER
@@ -189,6 +190,9 @@ unsigned char* file;
 
 int main(int argc, char* argv[])
 {
+	EventTimer timer1, timer2;
+    timer1.add("Main program");
+	
 	stopwatch ethernet_timer;
 	unsigned char* input[NUM_PACKETS];
 	int writer = 0;
@@ -218,6 +222,9 @@ int main(int argc, char* argv[])
    cl::Program program(context, devices, bins, NULL, &err);
    cl::CommandQueue q(context, device, CL_QUEUE_PROFILING_ENABLE, &err);
    cl::Kernel kernel_lzw(program, "encoding", &err);
+
+	timer2.add("Allocate contiguous OpenCL buffers");
+
 
    std::vector<cl::Event> write_event(1);
    std::vector<cl::Event> compute_event(1);
@@ -351,6 +358,7 @@ int main(int argc, char* argv[])
                         inputChunk[j] = (str + ChunkBoundary[i])[j];
                         cout<<inputChunk[j];
                     }
+					timer2.add("Running kernel");
                     kernel_lzw.setArg(0, in_buf);
                     kernel_lzw.setArg(1, inputChunklen);
                     kernel_lzw.setArg(2, out_buf );
@@ -386,6 +394,7 @@ int main(int argc, char* argv[])
 		}
 		writer++;
 	}
+	timer2.add("Writing output to output_fpga.bin");
 	cout<<"Total chunks rcvd = "<< (TotalChunksrcvd - 1)<< "unique chunks rcvd = "<<dedupTable1.size()<<endl;
     cout << "-------------file---------------"<<endl<<file[0];
 	int bytes_written = fwrite(&file[0], 1, offset, outfd);
@@ -403,6 +412,15 @@ int main(int argc, char* argv[])
 	std::cout << "Input Throughput to Encoder: " << input_throughput << " Mb/s."
 			<< " (Latency: " << ethernet_latency << "s)." << std::endl;
 
-	return 0;
+	timer2.finish();
+    std::cout << "--------------- Key execution times ---------------"
+    << std::endl;
+    timer2.print();
 
+    timer1.finish();
+    std::cout << "--------------- Total time ---------------"
+    << std::endl;
+    timer1.print();
+	
+	return 0;
 }
