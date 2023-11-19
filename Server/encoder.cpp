@@ -24,7 +24,7 @@
 #define usr_code
 using namespace std;
 int offset = 0;
-unsigned char* file;
+// unsigned char* file;
 
 #ifdef usr_code
 
@@ -52,13 +52,13 @@ void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_siz
 	// put your cdc implementation here
     uint64_t i;
 	// printf("buff length passed = %d\n",buff_size);
-    uint32_t prevBoundary = ChunkBoundary.size();
+    uint32_t prevBoundary = ChunkBoundary[0];
 
 	for(i = WIN_SIZE; i < buff_size - WIN_SIZE; i++)
 	{
-		if((hash_func(buff,i) % MODULUS) == 0 || (i - prevBoundary == 4096))
+		if(((hash_func(buff,i) % MODULUS) == 0) || (i - prevBoundary == 4096))
         {
-			// printf("chunk boundary at%ld\n",i);
+		   printf("chunk boundary at%ld\n",i-prevBoundary);
 			ChunkBoundary.push_back(i);
             prevBoundary = i;
 		}
@@ -134,7 +134,6 @@ void Swencoding(string s1,vector <char> &output)
     //return output_code;
 	cout<<endl;
 }
-
 
 #define BUCKET_SIZE 2
 #define CAPACITY (32768*BUCKET_SIZE) // hash output is 15 bits, and we have 1 entry per bucket, so capacity is 2^15
@@ -336,50 +335,13 @@ void lookup(unsigned long (&hash_table)[CAPACITY/BUCKET_SIZE][BUCKET_SIZE], asso
         assoc_lookup(mem, key, hit, result);
     }
 }
-
-#if KERNEL_TEST
-unsigned int output_code_len;
-unsigned int GetOutputCodeLen(void)
-{
-    return output_code_len;
-}
-
-void SetOutputCodeLen(unsigned int *val)
-{
-    output_code_len = val;
-    return;
-}
-
-unsigned int input_code_len;
-unsigned int GetInputCodeLen(void)
-{
-    return input_code_len;
-}
-
-void SetInputCodeLen(unsigned int val)
-{
-    input_code_len = val;
-    return;
-}
-#endif
-
 //****************************************************************************************************************
-#if KERNEL_TEST
-void encoding(const char* s1,char *output_code)
+void encoding(const char* s1,int length,char *output_code,unsigned int *output_code_len)
 {
-#else
-void encoding(const char* s1, int length, char *output_code,unsigned int *output_code_len)
-{
-#endif
     // create hash table and assoc mem
     unsigned long hash_table[CAPACITY/BUCKET_SIZE][BUCKET_SIZE];
     assoc_mem my_assoc_mem;
-    unsigned int out_tmp[4096];
-#if KERNEL_TEST
-    cout<<"input length"<<input_code_len<<endl;
-#else
-     cout<<"input length"<<length<<endl;
-#endif
+    unsigned int out_tmp[8192];
     // make sure the memories are clear
     for(int i = 0; i < (CAPACITY/BUCKET_SIZE); i++)
         for(int j =0; j < BUCKET_SIZE;j++)
@@ -402,26 +364,18 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
     int next_code = 256;
 
 
-    unsigned int prefix_code = s1[0];
+    unsigned int prefix_code = (unsigned char)s1[0];
     unsigned int code = 0;
     unsigned char next_char = 0;
     int codelength = 0; /*length of lzw code*/
     int i = 0;
-    prefix_code = (s1[0]);
-
-#if KERNEL_TEST
-	while(i < GetInputCodeLen())
-    {
-        if(i + 1 == GetInputCodeLen())
-#else
-    while(i < length)
+while(i < length)
     {
         if(i + 1 == length)
-#endif
         {
-            // std::cout << prefix_code;
-            // std::cout << " ";
-			out_tmp[codelength++] = (prefix_code);
+             std::cout << prefix_code;
+             std::cout << " ";
+out_tmp[codelength++] = (prefix_code)&0xFFF;
             break;
         }
         next_char = s1[i + 1];
@@ -431,7 +385,7 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
         lookup(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, &hit, &code);
         if(!hit)
         {
-            out_tmp[codelength++] = prefix_code;
+            out_tmp[codelength++] = prefix_code&0xFFF;
             std::cout << prefix_code;
             std::cout << " ";
 
@@ -457,38 +411,33 @@ void encoding(const char* s1, int length, char *output_code,unsigned int *output
     cout<<"...............Code length "<<codelength<<endl;
     for(int i =0;i< codelength;i++)
     {
-       /*Change the endianness of output code*/
-	   char data1 = (out_tmp[i] & 0x0ff0) >> 4;
-       char data2 = (out_tmp[i] & 0x000f) << 4;
-	   out_tmp[i] = (data2<<8)|(data1);
-	   if(!(i & 0x01)) // Even
-       {           /*lower 8-bits of 1st code*/
-		   output_code[k++] =(out_tmp[i] & 0xFF);
-		   output_code[k] = ((out_tmp[i] & 0xFF00)>>8);
-       }
-       else // Odd
-       {
+      /*Change the endianness of output code*/
+  char data1 = (out_tmp[i] & 0x0ff0) >> 4;
+      char data2 = (out_tmp[i] & 0x000f) << 4;
+  out_tmp[i] = (data2<<8)|(data1);
+  if(!(i & 0x01)) // Even
+      {           /*lower 8-bits of 1st code*/
+  output_code[k++] =(out_tmp[i] & 0xFF);
+  output_code[k] = ((out_tmp[i] & 0xFF00)>>8);
+      }
+      else // Odd
+      {
             output_code[k++] |= ((out_tmp[i] & 0x00F0)>>4);
-			output_code[k] = (out_tmp[i]<<4);
-			output_code[k++] |= ((out_tmp[i] >> 12) & 0x000F);
-       }
+output_code[k] = (out_tmp[i]<<4);
+output_code[k++] |= ((out_tmp[i] >> 12) & 0x000F);
+      }
 
     }
-#if KERNEL_TEST
-    output_code_len = (codelength % 2 != 0) ? ((codelength/2)*3) + 2 : ((codelength/2)*3);
-    cout<<"output code length"<<output_code_len<<" entries in lzw code "<<k<<endl;
-    std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
-#else
     *output_code_len = (codelength % 2 != 0) ? ((codelength/2)*3) + 2 : ((codelength/2)*3);
+    // *output_code_len = k;
+    // if(codelength % 2 != 0)
+    // {
+    //     output_code[++k] = 0;
+    // }
     cout<<"output code length"<<*output_code_len<<" entries in lzw code "<<k<<endl;
     std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
-#endif
-    // *output_code_len = k;
-    // if(codelength % 2 != 0) 
-    // {
-    //     output_code[++k] = 0; 
-    // }
 }
+
 
 
 
