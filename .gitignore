@@ -1,7 +1,5 @@
 output_fpga.txt
 vitis_hls.log
-Decoder/Decoder.cpp
-Decoder/Decoder.h
 ESE5320_Project/.project
 ESE5320_Project/hls.app
 ESE5320_Project/.apc/autopilot.apfmapping
