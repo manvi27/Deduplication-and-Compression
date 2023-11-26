@@ -60,7 +60,7 @@ static const std::string Decompress(size_t Size)
   return Output;
 }
 
-int main2(char * input, char * output)
+int DecoderTest(char * input, char * output)
 {
 
   Input.open(input, std::ios::binary);
