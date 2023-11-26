@@ -45,8 +45,16 @@ HOST_SOURCES = ./App/Host.cpp  ./App/EventTimer.cpp ./App/Utilities.cpp ./Dedup/
 HOST_OBJECTS =$(HOST_SOURCES:.cpp=.o)
 HOST_EXE = host
 
+
+CLIENT_SOURCES = Client/client.cpp
+CLIENT_EXE = client
+
 .PHONY: cpu
 cpu: $(CPU_EXE)
+
+
+$(CLIENT_EXE):
+	g++ -O3 $(CLIENT_SOURCES) -o "$@"
 
 $(CPU_EXE): $(CPU_OBJECTS)
 	$(HOST_CXX) -I./ -I./App -I./Decoder -I./Server -I./Dedup -I./SHA_algorithm -o "$@" $(+) $(LDFLAGS)
