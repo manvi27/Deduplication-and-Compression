@@ -32,7 +32,7 @@ void handle_input(int argc, char* argv[], int* blocksize) {
 			printf("blocksize is set to %d optarg\n", *blocksize);
 			break;
 		case ':':
-			printf("-%c without parameter\n", optopt);
+			printf("-%c without parameter\n", optarg);
 			break;
 		}
 	}
