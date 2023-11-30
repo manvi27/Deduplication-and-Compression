@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <CL/cl2.hpp>
 #include "EventTimer.h"
+#include <thread>
 
 // When creating a buffer with user pointer (CL_MEM_USE_HOST_PTR), under the
 // hood
