@@ -364,11 +364,10 @@ int main(int argc, char* argv[])
                     kernel_lzw.setArg(2, out_buf );
                     kernel_lzw.setArg(3, out_buf_len);
                     cout<<"arguments set"<<endl;
-                    q.enqueueMigrateMemObjects({in_buf}, 0 /* 0 means from host*/, NULL);
-                    q.finish();
-                    q.enqueueTask(kernel_lzw);
-                    q.finish();
-                    q.enqueueMigrateMemObjects({out_buf,out_buf_len}, CL_MIGRATE_MEM_OBJECT_HOST);
+                    q.enqueueMigrateMemObjects({in_buf}, 0 /* 0 means from host*/, NULL, &write_event[0]);
+					q.enqueueTask(kernel_lzw, &write_event, &compute_event[0]);
+					q.enqueueMigrateMemObjects({out_buf, out_buf_len}, CL_MIGRATE_MEM_OBJECT_HOST, &compute_event, &done_event[0]);
+					clWaitForEvents(1, (const cl_event *)&done_event[0]);
                     q.finish();
                     cout<<"encoding done"<<endl;
                     header = ((*outputChunk_len)<<1);
