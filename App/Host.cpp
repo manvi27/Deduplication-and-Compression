@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
    cl::CommandQueue q(context, device, CL_QUEUE_PROFILING_ENABLE, &err);
    cl::Kernel kernel_lzw(program, "encoding", &err);
 
-	timer2.add("Allocate contiguous OpenCL buffers");
+	// timer2.add("Allocate contiguous OpenCL buffers");
 
 
    std::vector<cl::Event> write_event(1);
@@ -119,11 +119,12 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 	}
-
 	server.setup_server(blocksize);
-
+	// timer2.add("Get packet");
 	writer = pipe_depth;
+	// ethernet_timer.start();
 	server.get_packet(input[writer]);
+	// ethernet_timer.stop();
 	count++;
 	// get packet
 	unsigned char* buffer = input[writer];
@@ -140,6 +141,7 @@ int main(int argc, char* argv[])
 	input_buffer.insert(0,(const char*)(buffer+2));
 	pos += length;
 	// cout << input_buffer<< endl;
+	unsigned long startTime, stopTime, totalTime = 0;
 
 	writer++;
 	//last message
@@ -176,8 +178,9 @@ int main(int argc, char* argv[])
 		    // cout << "----------done value "<<done <<endl;
 			ChunkBoundary.push_back(0);
 			const char *str = input_buffer.c_str();
+			timer2.add("CDC");
             cdc(ChunkBoundary, input_buffer ,pos);
-			
+			timer2.add("CDC end");
             if(128 == done)
 			{
 				ChunkBoundary.push_back(pos);
@@ -188,8 +191,11 @@ int main(int argc, char* argv[])
                 // printf("Point5\n");
                 /*reference for using chunks */
                 // cout <<ChunkBoundary[i + 1] - ChunkBoundary[i];
+				timer2.add("SHA_Dedup");
 				UniqueChunkId = runSHA(dedupTable1, input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
                         ChunkBoundary[i + 1] - ChunkBoundary[i]);
+				timer2.add("SHA_Dedup end");
+				
 				if(-1 == UniqueChunkId)
 				{
 					// encoding(str + ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i],payload,&payloadlen);
@@ -212,7 +218,15 @@ int main(int argc, char* argv[])
 					q.enqueueTask(kernel_lzw, &write_event, &compute_event[0]);
 					q.enqueueMigrateMemObjects({out_buf, out_buf_len}, CL_MIGRATE_MEM_OBJECT_HOST, &compute_event, &done_event[0]);
 					clWaitForEvents(1, (const cl_event *)&done_event[0]);
-                    q.finish();
+                    // q.finish();
+					timer2.add("Running kernel end");
+
+					compute_event[0].getProfilingInfo<unsigned long> (CL_PROFILING_COMMAND_START, &startTime);
+					compute_event[0].getProfilingInfo<unsigned long> (CL_PROFILING_COMMAND_END, &stopTime);
+					totalTime += (stopTime - startTime);
+					cout<<"Start Time : "<<startTime<<endl;
+					cout<<"Stop Time : "<<stopTime<<endl;
+					cout<<"Total Time : "<<totalTime<<endl;
                     cout<<"encoding done"<<endl;
                     header = ((*outputChunk_len)<<1);
                     cout<<"output chunk length = "<<*outputChunk_len<<endl;
@@ -237,6 +251,7 @@ int main(int argc, char* argv[])
 		}
 		writer++;
 	}
+	
 	timer2.add("Writing output to output_fpga.bin");
 	cout<<"Total chunks rcvd = "<< (TotalChunksrcvd - 1)<< "unique chunks rcvd = "<<dedupTable1.size()<<endl;
     cout << "-------------file---------------"<<endl<<file[0];
@@ -264,6 +279,10 @@ int main(int argc, char* argv[])
     std::cout << "--------------- Total time ---------------"
     << std::endl;
     timer1.print();
+
+	std::cout << "--------------- Total compute time - profiling---------------"
+    << std::endl;
+    cout<<"Time : "<<totalTime<<endl;
 	
 	return 0;
 }
