@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 	EventTimer timer1, timer2;
     timer1.add("Main program");
 	
-	stopwatch ethernet_timer;
+	stopwatch ethernet_timer, cdc_timer;
 	unsigned char* input[NUM_PACKETS];
 	int writer = 0;
 	int done = 0;
@@ -178,9 +178,11 @@ int main(int argc, char* argv[])
 		    // cout << "----------done value "<<done <<endl;
 			ChunkBoundary.push_back(0);
 			const char *str = input_buffer.c_str();
+			cdc_timer.start();
 			timer2.add("CDC");
             cdc(ChunkBoundary, input_buffer ,pos);
 			timer2.add("CDC end");
+			cdc_timer.stop();
             if(128 == done)
 			{
 				ChunkBoundary.push_back(pos);
@@ -283,6 +285,8 @@ int main(int argc, char* argv[])
 	std::cout << "--------------- Total compute time - profiling---------------"
     << std::endl;
     cout<<"Time : "<<totalTime<<endl;
+
+	std::cout << "CDC Average latency: " << cdc_timer.avg_latency()<< " ms." << std::endl;
 	
 	return 0;
 }
