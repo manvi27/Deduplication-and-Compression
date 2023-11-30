@@ -79,5 +79,6 @@ template <typename T> struct aligned_allocator {
 std::vector<cl::Device> get_xilinx_devices();
 char* read_binary_file(const std::string &xclbin_file_name, unsigned &nb);
 void set_callback(cl::Event event, const char *queue_name);
-
+void pin_thread_to_cpu(std::thread &t, int cpu_num);
+void pin_main_thread_to_cpu0();
 #endif
