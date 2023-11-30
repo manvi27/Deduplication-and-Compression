@@ -33,6 +33,8 @@ int offset = 0;
 #define MODULUS 4096
 #define TARGET 0
 
+int powArr[WIN_SIZE] = {1,3,9,27,81,243,729,2187,6561,19683,59049,177147,531441,1594323,4782969,14348907};
+
 std::unordered_map <string, int> dedupTable;
 uint64_t hash_func(string input, unsigned int pos)
 {
@@ -42,7 +44,8 @@ uint64_t hash_func(string input, unsigned int pos)
 
 	for(i = 0; i < WIN_SIZE; i++)
 	{
-		hash += input[pos+WIN_SIZE-1-i]*(pow(PRIME,i+1));
+		// hash += input[pos+WIN_SIZE-1-i]*(pow(PRIME,i+1));powArr
+        hash += input[pos+WIN_SIZE-1-i]*(powArr[i]);
 	}
 	return hash;
 }
