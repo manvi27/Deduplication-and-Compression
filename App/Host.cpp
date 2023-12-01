@@ -35,9 +35,8 @@ unsigned char* file;
 int main(int argc, char* argv[])
 {
 	EventTimer timer1, timer2;
-    timer1.add("Main program");
 	
-	stopwatch ethernet_timer, cdc_timer;
+	stopwatch ethernet_timer, cdc_timer, sha_timer, lzw_timer;
 	unsigned char* input[NUM_PACKETS];
 	int writer = 0;
 	int done = 0;
@@ -144,6 +143,7 @@ int main(int argc, char* argv[])
 	unsigned long startTime, stopTime, totalTime = 0;
 
 	writer++;
+	timer1.add("Main program");
 	//last message
 	while (!done) {
 		// reset ring buffer
@@ -180,6 +180,7 @@ int main(int argc, char* argv[])
 			const char *str = input_buffer.c_str();
 			cdc_timer.start();
 			timer2.add("CDC");
+			cout<<"...................Pos : "<<pos<<endl;
             cdc(ChunkBoundary, input_buffer ,pos);
 			timer2.add("CDC end");
 			cdc_timer.stop();
@@ -193,10 +194,12 @@ int main(int argc, char* argv[])
                 // printf("Point5\n");
                 /*reference for using chunks */
                 // cout <<ChunkBoundary[i + 1] - ChunkBoundary[i];
+				sha_timer.start();
 				timer2.add("SHA_Dedup");
 				UniqueChunkId = runSHA(dedupTable1, input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
                         ChunkBoundary[i + 1] - ChunkBoundary[i]);
 				timer2.add("SHA_Dedup end");
+				sha_timer.stop();
 				
 				if(-1 == UniqueChunkId)
 				{
@@ -210,6 +213,7 @@ int main(int argc, char* argv[])
                         inputChunk[j] = (str + ChunkBoundary[i])[j];
                         cout<<inputChunk[j];
                     }
+					lzw_timer.start();
 					timer2.add("Running kernel");
                     kernel_lzw.setArg(0, in_buf);
                     kernel_lzw.setArg(1, inputChunklen);
@@ -222,6 +226,7 @@ int main(int argc, char* argv[])
 					clWaitForEvents(1, (const cl_event *)&done_event[0]);
                     // q.finish();
 					timer2.add("Running kernel end");
+					lzw_timer.stop();
 
 					compute_event[0].getProfilingInfo<unsigned long> (CL_PROFILING_COMMAND_START, &startTime);
 					compute_event[0].getProfilingInfo<unsigned long> (CL_PROFILING_COMMAND_END, &stopTime);
@@ -286,7 +291,9 @@ int main(int argc, char* argv[])
     << std::endl;
     cout<<"Time : "<<totalTime<<endl;
 
-	std::cout << "CDC Average latency: " << cdc_timer.avg_latency()<< " ms." << std::endl;
+	std::cout << "CDC Average latency: " << cdc_timer.avg_latency()<< " ms." << " Latency : "<<cdc_timer.latency()<<std::endl;
+	std::cout << "SHA Average latency: " << sha_timer.avg_latency()<< " ms." << " Latency : "<<sha_timer.latency()<<std::endl;
+	std::cout << "LZW Average latency: " << lzw_timer.avg_latency()<< " ms." << " Latency : "<<lzw_timer.latency()<<std::endl;
 	
 	return 0;
 }
