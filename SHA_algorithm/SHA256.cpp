@@ -11,7 +11,8 @@
 #include <sstream>
 #include <iostream>
 #include "SHA256.h"
-#include "SHA_Test.h"
+// #include "SHA_Test.h"
+#include "SHA_NEON.h"
 #include "../Dedup/Dedup.h"
 
 static const uint32_t K256[] =
