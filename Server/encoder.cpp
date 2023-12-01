@@ -16,7 +16,10 @@
 #include <vector>
 #include <math.h>
 #include "../SHA_algorithm/SHA256.h"
+#include "../CDC/CDC_NEON.h"
+#include "../CDC/CDC.h"
 #include <unordered_map>
+#include <arm_neon.h>
 #define NUM_PACKETS 8
 #define pipe_depth 4
 #define DONE_BIT_L (1 << 7)
@@ -33,39 +36,158 @@ int offset = 0;
 #define MODULUS 4096
 #define TARGET 0
 
-int powArr[WIN_SIZE] = {1,3,9,27,81,243,729,2187,6561,19683,59049,177147,531441,1594323,4782969,14348907};
+uint32_t powArr[WIN_SIZE] = {1,3,9,27,81,243,729,2187,6561,19683,59049,177147,531441,1594323,4782969,14348907};
 
 std::unordered_map <string, int> dedupTable;
+// uint64_t hash_func(string input, unsigned int pos)
+// {
+// 	// put your hash function implementation here
+//     uint64_t hash = 0;
+// 	uint8_t i = 0;
+
+// 	for(i = 0; i < WIN_SIZE; i++)
+// 	{
+// 		// hash += input[pos+WIN_SIZE-1-i]*(pow(PRIME,i+1));powArr
+//         hash += input[pos+WIN_SIZE-1-i]*(powArr[i]);
+// 	}
+// 	return hash;
+// }
+// void XXH3_accumulate_512_neon(void* XXH_RESTRICT acc, const void* XXH_RESTRICT input, const void* XXH_RESTRICT secret);
+
+uint64_t hash_func1(string input, unsigned int pos)
+{
+
+const char *p = input.c_str();
+uint32_t arr1[16] =  {1,3,9,27,81,243,729,2187,6561,19683,59049,177147,531441,1594323,4782969,14348907};
+uint32_t result[16];
+uint32x4_t vec1_0 = vld1q_u32((const uint32_t*)p);
+uint32x4_t vec2_0 = vld1q_u32(arr1);
+uint32x4_t vec3_0 = vmulq_u32(vec1_0, vec2_0);
+vst1q_u32(result, vec3_0);
+uint32x4_t vec1_1 = vld1q_u32((const uint32_t*)p+4);
+uint32x4_t vec2_1 = vld1q_u32(arr1+4);
+uint32x4_t vec3_1 = vmulq_u32(vec1_1, vec2_1);
+vst1q_u32(result+4, vec3_1);
+uint32x4_t vec1_2 = vld1q_u32((const uint32_t*)p+8);
+uint32x4_t vec2_2 = vld1q_u32(arr1+8);
+uint32x4_t vec3_2 = vmulq_u32(vec1_2, vec2_2);
+vst1q_u32(result+8, vec3_2);
+uint32x4_t vec1_3 = vld1q_u32((const uint32_t*)p+12);
+uint32x4_t vec2_3 = vld1q_u32(arr1+12);
+uint32x4_t vec3_3 = vmulq_u32(vec1_3, vec2_3);
+vst1q_u32(result+12, vec3_3);
+
+uint64_t hash = 0;
+for(int i =0; i<16;++i) {
+    // cout<<".................result : "<<result[i]<<endl;
+    hash+=result[i];
+}
+    return hash;
+}
+
+uint64_t HashCDC = 0;
+#if 1
 uint64_t hash_func(string input, unsigned int pos)
 {
 	// put your hash function implementation here
-    uint64_t hash = 0;
-	uint8_t i = 0;
-
-	for(i = 0; i < WIN_SIZE; i++)
-	{
-		// hash += input[pos+WIN_SIZE-1-i]*(pow(PRIME,i+1));powArr
-        hash += input[pos+WIN_SIZE-1-i]*(powArr[i]);
-	}
-	return hash;
+    uint64_t hash = (HashCDC - (input[pos+WIN_SIZE-17]*14348907)) / 3;
+    hash += input[pos+WIN_SIZE-1];
+    HashCDC = hash;
+    // hash += input[pos+WIN_SIZE-1]*1;
+    // hash += input[pos+WIN_SIZE-2]*3;
+    // hash += input[pos+WIN_SIZE-3]*9;
+    // hash += input[pos+WIN_SIZE-4]*27;
+    // hash += input[pos+WIN_SIZE-5]*81;
+    // hash += input[pos+WIN_SIZE-6]*243;
+    // hash += input[pos+WIN_SIZE-7]*729;
+    // hash += input[pos+WIN_SIZE-8]*2187;
+    // hash += input[pos+WIN_SIZE-9]*6561;
+    // hash += input[pos+WIN_SIZE-10]*19683;
+    // hash += input[pos+WIN_SIZE-11]*59049;
+    // hash += input[pos+WIN_SIZE-12]*177147;
+    // hash += input[pos+WIN_SIZE-13]*531441;
+    // hash += input[pos+WIN_SIZE-14]*1594323;
+    // hash += input[pos+WIN_SIZE-15]*4782969;
+    // hash += input[pos+WIN_SIZE-16]*14348907;
+	// std::cout << "............HASH : " << hash << std::endl;
+    // lastHash = hash;
+    return hash;
 }
+#endif
+uint64_t Hashprologue(string input) {
+    //i = WIN_SIZE
+    //i + WINSIZE = 32
+    uint64_t hash = 0;
+    hash += input[32-1];
+    hash += input[32-2]*3;
+    hash += input[32-3]*9;
+    hash += input[32-4]*27;
+    hash += input[32-5]*81;
+    hash += input[32-6]*243;
+    hash += input[32-7]*729;
+    hash += input[32-8]*2187;
+    hash += input[32-9]*6561;
+    hash += input[32-10]*19683;
+    hash += input[32-11]*59049;
+    hash += input[32-12]*177147;
+    hash += input[32-13]*531441;
+    hash += input[32-14]*1594323;
+    hash += input[32-15]*4782969;
+    hash += input[32-16]*14348907;
 
+    HashCDC = hash;
+
+    return hash;
+}
+#define FIXED_CHUNKING 1
 void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_size)
 {
-	// put your cdc implementation here
+#ifdef FIXED_CHUNKING
+    uint64_t i = buff_size;
+    uint32_t countChunk = 0;
+    while(i > 4096) {
+        countChunk++;
+        cout<<"................Chunk Boundary : "<<countChunk * 4096;
+        ChunkBoundary.push_back(countChunk*4096);
+        i-=4096;
+    }
+    cout<<".................Chunk Boundary : "<<i;
+    ChunkBoundary.push_back(buff_size);
+    return;
+#else
+    // put your cdc implementation here
     uint64_t i;
 	// printf("buff length passed = %d\n",buff_size);
     uint32_t prevBoundary = ChunkBoundary[0];
 
-	for(i = WIN_SIZE; i < buff_size - WIN_SIZE; i++)
+    if((Hashprologue(buff) & 0x0FFF) == 0)
+    {
+    //    printf("chunk boundary at%ld\n",i-prevBoundary);
+        printf("-----------------------Do Hash\n");
+        ChunkBoundary.push_back(WIN_SIZE);
+        prevBoundary = WIN_SIZE;
+    }
+
+	for(i = WIN_SIZE + 1; i < buff_size - WIN_SIZE; i++)
 	{
-		if(((hash_func(buff,i) % MODULUS) == 0) || (i - prevBoundary == 4096))
-        {
-		   printf("chunk boundary at%ld\n",i-prevBoundary);
+		
+        if(i - prevBoundary == 4096) {
+            printf(".....................>Skip hash\n");
 			ChunkBoundary.push_back(i);
             prevBoundary = i;
+            continue;
+        }
+        //if(((hash_func(buff,i) % MODULUS) == 0) || (i - prevBoundary == 4096))
+        else if((hash_func(buff,i) & 0x0FFF) == 0)
+        {
+		//    printf("chunk boundary at%ld\n",i-prevBoundary);
+            printf("-----------------------Do Hash\n");
+			ChunkBoundary.push_back(i);
+            prevBoundary = i;
+            continue;
 		}
 	} 
+#endif
 }
 
 void Swencoding(string s1,vector <char> &output)
