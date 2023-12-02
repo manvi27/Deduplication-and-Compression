@@ -422,83 +422,6 @@ int main(int argc, char* argv[])
 			const char *str = input_buffer.c_str();
 			cdc_timer.start();
 			timer2.add("CDC");
-<<<<<<< HEAD
-			cout<<"...................Pos : "<<pos<<endl;
-            cdc(ChunkBoundary, input_buffer ,pos);
-			timer2.add("CDC end");
-			cdc_timer.stop();
-            if(128 == done)
-			{
-				ChunkBoundary.push_back(pos);
-			}
-			TotalChunksrcvd += ChunkBoundary.size() ;
-			for(int i = 0; i < ChunkBoundary.size() - 1; i++)
-            {
-                // printf("Point5\n");
-                /*reference for using chunks */
-                // cout <<ChunkBoundary[i + 1] - ChunkBoundary[i];
-				sha_timer.start();
-				timer2.add("SHA_Dedup");
-				UniqueChunkId = runSHA(dedupTable1, input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),
-                        ChunkBoundary[i + 1] - ChunkBoundary[i]);
-				timer2.add("SHA_Dedup end");
-				sha_timer.stop();
-				
-				if(-1 == UniqueChunkId)
-				{
-					// encoding(str + ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i],payload,&payloadlen);
-					// encoding(input_buffer.substr(ChunkBoundary[i],ChunkBoundary[i + 1] - ChunkBoundary[i]),payload);
-					// header = (payloadlen<<1);
-					// cout<<"Unique chunk\n";
-                    int inputChunklen = ChunkBoundary[i + 1] - ChunkBoundary[i];
-                    for(int j = 0; j < inputChunklen;j++)
-                    {
-                        inputChunk[j] = (str + ChunkBoundary[i])[j];
-                        cout<<inputChunk[j];
-                    }
-					lzw_timer.start();
-					timer2.add("Running kernel");
-                    kernel_lzw.setArg(0, in_buf);
-                    kernel_lzw.setArg(1, inputChunklen);
-                    kernel_lzw.setArg(2, out_buf );
-                    kernel_lzw.setArg(3, out_buf_len);
-                    cout<<"arguments set"<<endl;
-                    q.enqueueMigrateMemObjects({in_buf}, 0 /* 0 means from host*/, NULL, &write_event[0]);
-					q.enqueueTask(kernel_lzw, &write_event, &compute_event[0]);
-					q.enqueueMigrateMemObjects({out_buf, out_buf_len}, CL_MIGRATE_MEM_OBJECT_HOST, &compute_event, &done_event[0]);
-					clWaitForEvents(1, (const cl_event *)&done_event[0]);
-                    // q.finish();
-					timer2.add("Running kernel end");
-					lzw_timer.stop();
-
-					compute_event[0].getProfilingInfo<unsigned long> (CL_PROFILING_COMMAND_START, &startTime);
-					compute_event[0].getProfilingInfo<unsigned long> (CL_PROFILING_COMMAND_END, &stopTime);
-					totalTime += (stopTime - startTime);
-					cout<<"Start Time : "<<startTime<<endl;
-					cout<<"Stop Time : "<<stopTime<<endl;
-					cout<<"Total Time : "<<totalTime<<endl;
-                    cout<<"encoding done"<<endl;
-                    header = ((*outputChunk_len)<<1);
-                    cout<<"output chunk length = "<<*outputChunk_len<<endl;
-                    memcpy(&file[offset], &header, sizeof(header));
-		            // cout << "-------header----------"<< header<<"=="<<(int)(*((int*)&file[offset]))<<endl;
-		            offset +=  sizeof(header);
-		            //  cout<<"Chuck position : "<<ChunkBoundary[i]<<" chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[i]<<" LZW size " <<payloadlen<<" Table Size : "<<TableSize<<endl;
-		            memcpy(&file[offset], outputChunk, *outputChunk_len);
-		            offset +=  *outputChunk_len;
-				}
-				else
-				{
-					// cout<<"Duplicate chunk\n";
-                    header = (((UniqueChunkId)<<1) | 1);
-                    memcpy(&file[offset], &header, sizeof(header));
-		            // cout << "-------header----------"<< header<<"=="<<(int)(*((int*)&file[offset]))<<endl;
-		            offset +=  sizeof(header);
-				}
-			}
-			pos = pos - ChunkBoundary[ChunkBoundary.size() - 1];
-			input_buffer = input_buffer.substr(ChunkBoundary[ChunkBoundary.size() - 1],pos);
-=======
 			core_0_process(ChunkBoundary, input_buffer ,pos,kernel_lzw,q,inputChunk);
 			cdc_timer.stop();
 			TotalChunksrcvd += ChunksCount;
@@ -506,7 +429,6 @@ int main(int argc, char* argv[])
 			pos = pos - ChunkBoundary[ChunksCount - 1];
 			cout<<"Number of chunks "<<ChunksCount<<"remaining buffer to be cat to next input rcvd"<<pos<<endl;
 			input_buffer = input_buffer.substr(ChunkBoundary[ChunksCount - 1],pos);
->>>>>>> 92fb430 (Multi threading and SHA NEON add)
 		}
 		writer++;
 	}
@@ -543,15 +465,9 @@ int main(int argc, char* argv[])
     << std::endl;
     cout<<"Time : "<<totalTime<<endl;
 
-<<<<<<< HEAD
-	std::cout << "CDC Average latency: " << cdc_timer.avg_latency()<< " ms." << " Latency : "<<cdc_timer.latency()<<std::endl;
-	std::cout << "SHA Average latency: " << sha_timer.avg_latency()<< " ms." << " Latency : "<<sha_timer.latency()<<std::endl;
-	std::cout << "LZW Average latency: " << lzw_timer.avg_latency()<< " ms." << " Latency : "<<lzw_timer.latency()<<std::endl;
-=======
 	// std::cout << "CDC Average latency: " << cdc_timer.avg_latency()<< " ms." << " Latency : "<<cdc_timer.latency()<<std::endl;
 	// std::cout << "SHA Average latency: " << sha_timer.avg_latency()<< " ms." << " Latency : "<<sha_timer.latency()<<std::endl;
 	// std::cout << "LZW Average latency: " << lzw_timer.avg_latency()<< " ms." << " Latency : "<<lzw_timer.latency()<<std::endl;
->>>>>>> 92fb430 (Multi threading and SHA NEON add)
 	
 	return 0;
 }

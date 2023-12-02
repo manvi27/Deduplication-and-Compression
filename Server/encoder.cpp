@@ -16,8 +16,6 @@
 #include <vector>
 #include <math.h>
 #include "../SHA_algorithm/SHA256.h"
-#include "../CDC/CDC_NEON.h"
-#include "../CDC/CDC.h"
 #include <unordered_map>
 #include <arm_neon.h>
 #define NUM_PACKETS 8
@@ -90,29 +88,7 @@ uint64_t HashCDC = 0;
 uint64_t hash_func(string input, unsigned int pos)
 {
 	// put your hash function implementation here
-<<<<<<< HEAD
-    uint64_t hash = (HashCDC - (input[pos+WIN_SIZE-17]*14348907)) / 3;
-    hash += input[pos+WIN_SIZE-1];
-    HashCDC = hash;
-    // hash += input[pos+WIN_SIZE-1]*1;
-    // hash += input[pos+WIN_SIZE-2]*3;
-    // hash += input[pos+WIN_SIZE-3]*9;
-    // hash += input[pos+WIN_SIZE-4]*27;
-    // hash += input[pos+WIN_SIZE-5]*81;
-    // hash += input[pos+WIN_SIZE-6]*243;
-    // hash += input[pos+WIN_SIZE-7]*729;
-    // hash += input[pos+WIN_SIZE-8]*2187;
-    // hash += input[pos+WIN_SIZE-9]*6561;
-    // hash += input[pos+WIN_SIZE-10]*19683;
-    // hash += input[pos+WIN_SIZE-11]*59049;
-    // hash += input[pos+WIN_SIZE-12]*177147;
-    // hash += input[pos+WIN_SIZE-13]*531441;
-    // hash += input[pos+WIN_SIZE-14]*1594323;
-    // hash += input[pos+WIN_SIZE-15]*4782969;
-    // hash += input[pos+WIN_SIZE-16]*14348907;
-	// std::cout << "............HASH : " << hash << std::endl;
-    // lastHash = hash;
-=======
+
     uint64_t hash = 0;
     hash += input[pos+WIN_SIZE-1]*1;
     hash += input[pos+WIN_SIZE-2]*3;
@@ -131,7 +107,6 @@ uint64_t hash_func(string input, unsigned int pos)
     hash += input[pos+WIN_SIZE-15]*4782969;
     hash += input[pos+WIN_SIZE-16]*14348907;
 	// std::cout << "............HASH : " << hash << std::endl;
->>>>>>> 92fb430 (Multi threading and SHA NEON add)
     return hash;
 }
 #endif
