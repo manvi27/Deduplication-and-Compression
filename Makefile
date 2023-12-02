@@ -41,7 +41,7 @@ ALL_MESSAGE_FILES = $(subst .xo,.mdb,$(XO)) $(subst .xclbin,.mdb,$(XCLBIN))
 #
 # host files
 #
-HOST_SOURCES = ./App/Host.cpp  ./App/EventTimer.cpp ./App/Utilities.cpp ./Dedup/Dedup.cpp ./Server/encoder.cpp ./Server/server.cpp ./SHA_algorithm/SHA256.cpp ./SHA_algorithm/SHA_NEON.cpp
+HOST_SOURCES = ./App/Host.cpp ./App/EventTimer.cpp ./App/Utilities.cpp ./Dedup/Dedup.cpp ./Server/encoder.cpp ./Server/server.cpp ./SHA_algorithm/SHA256.cpp ./SHA_algorithm/SHA_NEON.cpp
 HOST_OBJECTS =$(HOST_SOURCES:.cpp=.o)
 HOST_EXE = host
 
