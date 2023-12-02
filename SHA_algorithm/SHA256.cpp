@@ -198,11 +198,11 @@ int runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length
 	// }
 // printf("SHAPoint2");
 string xyz = "";
-    //  cout << data <<endl;
+     cout <<endl<< "SHA:";
     for(int i = 0; i < 32; ++i) {
         xyz += hashData[i];
-        printf("%X ",hashData[i]);
-       // printf("0x%02X ", hashData[i]);
+        // printf("%X ",hashData[i]);
+       printf("0x%02X ", hashData[i]);
         
     }
     //printf("%X\n",xyz);
