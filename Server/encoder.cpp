@@ -15,9 +15,9 @@
 #include "stopwatch.h"
 #include <vector>
 #include <math.h>
-#include "../SHA_algorithm/SHA256.h"
+// #include "../SHA_algorithm/SHA256.h"
 #include <unordered_map>
-#include <arm_neon.h>
+// #include <arm_neon.h>
 #define NUM_PACKETS 8
 #define pipe_depth 4
 #define DONE_BIT_L (1 << 7)
@@ -58,22 +58,22 @@ uint64_t hash_func1(string input, unsigned int pos)
 const char *p = input.c_str();
 uint32_t arr1[16] =  {1,3,9,27,81,243,729,2187,6561,19683,59049,177147,531441,1594323,4782969,14348907};
 uint32_t result[16];
-uint32x4_t vec1_0 = vld1q_u32((const uint32_t*)p);
-uint32x4_t vec2_0 = vld1q_u32(arr1);
-uint32x4_t vec3_0 = vmulq_u32(vec1_0, vec2_0);
-vst1q_u32(result, vec3_0);
-uint32x4_t vec1_1 = vld1q_u32((const uint32_t*)p+4);
-uint32x4_t vec2_1 = vld1q_u32(arr1+4);
-uint32x4_t vec3_1 = vmulq_u32(vec1_1, vec2_1);
-vst1q_u32(result+4, vec3_1);
-uint32x4_t vec1_2 = vld1q_u32((const uint32_t*)p+8);
-uint32x4_t vec2_2 = vld1q_u32(arr1+8);
-uint32x4_t vec3_2 = vmulq_u32(vec1_2, vec2_2);
-vst1q_u32(result+8, vec3_2);
-uint32x4_t vec1_3 = vld1q_u32((const uint32_t*)p+12);
-uint32x4_t vec2_3 = vld1q_u32(arr1+12);
-uint32x4_t vec3_3 = vmulq_u32(vec1_3, vec2_3);
-vst1q_u32(result+12, vec3_3);
+// uint32x4_t vec1_0 = vld1q_u32((const uint32_t*)p);
+// uint32x4_t vec2_0 = vld1q_u32(arr1);
+// uint32x4_t vec3_0 = vmulq_u32(vec1_0, vec2_0);
+// vst1q_u32(result, vec3_0);
+// uint32x4_t vec1_1 = vld1q_u32((const uint32_t*)p+4);
+// uint32x4_t vec2_1 = vld1q_u32(arr1+4);
+// uint32x4_t vec3_1 = vmulq_u32(vec1_1, vec2_1);
+// vst1q_u32(result+4, vec3_1);
+// uint32x4_t vec1_2 = vld1q_u32((const uint32_t*)p+8);
+// uint32x4_t vec2_2 = vld1q_u32(arr1+8);
+// uint32x4_t vec3_2 = vmulq_u32(vec1_2, vec2_2);
+// vst1q_u32(result+8, vec3_2);
+// uint32x4_t vec1_3 = vld1q_u32((const uint32_t*)p+12);
+// uint32x4_t vec2_3 = vld1q_u32(arr1+12);
+// uint32x4_t vec3_3 = vmulq_u32(vec1_3, vec2_3);
+// vst1q_u32(result+12, vec3_3);
 
 uint64_t hash = 0;
 for(int i =0; i<16;++i) {
