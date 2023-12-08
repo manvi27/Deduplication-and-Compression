@@ -257,7 +257,7 @@ void Swencoding(string s1,vector <char> &output)
 }
 
 #define BUCKET_SIZE 2
-#define CAPACITY (32768*BUCKET_SIZE) // hash output is 15 bits, and we have 1 entry per bucket, so capacity is 2^15
+#define CAPACITY (16384*BUCKET_SIZE) // hash output is 15 bits, and we have 1 entry per bucket, so capacity is 2^15
 #define BUCKET_LIMIT 3
 //#define CAPACITY 4096
 // try  uncommenting the line above and commenting line 6 to make the hash table smaller
@@ -457,9 +457,12 @@ void lookup(unsigned long (&hash_table)[CAPACITY/BUCKET_SIZE][BUCKET_SIZE], asso
     }
 }
 //****************************************************************************************************************
-void encoding(const char* s1,int length,char *output_code,unsigned int *output_code_len)
-void encoding(const char* s1,int length,char *output_code,unsigned int *output_code_len)
+void encoding(char* s1,int length,char *output_code,unsigned int *output_code_len)
 {
+#pragma HLS INTERFACE m_axi port=s1 bundle=p2;
+#pragma HLS INTERFACE m_axi port=output_code bundle=p1;
+#pragma HLS INTERFACE m_axi port=output_code_len bundle=p0;
+
     // create hash table and assoc mem
     unsigned long hash_table[CAPACITY/BUCKET_SIZE][BUCKET_SIZE];
     assoc_mem my_assoc_mem;
@@ -476,13 +479,6 @@ void encoding(const char* s1,int length,char *output_code,unsigned int *output_c
         my_assoc_mem.lower_key_mem[i] = 0;
     }
 
-    // init the memories with the first 256 codes
-    // for(unsigned long i = 0; i < 256; i++)
-    // {
-    //     bool collision = 0;
-    //     unsigned int key = (i << 8) + 0UL; // lower 8 bits are the next char, the upper bits are the prefix code
-    //     insert(hash_table, &my_assoc_mem, key, i, &collision);
-    // }
     int next_code = 256;
 
 
@@ -491,13 +487,14 @@ void encoding(const char* s1,int length,char *output_code,unsigned int *output_c
     unsigned char next_char = 0;
     int codelength = 0; /*length of lzw code*/
     int i = 0;
-    while(i < length)
+    for(i = 0; i < length; i++)
     {
+#pragma HLS pipeline II=1
         if(i + 1 == length)
         {
-             std::cout << prefix_code;
-             std::cout << " ";
-out_tmp[codelength++] = (prefix_code)&0xFFF;
+            std::cout << prefix_code;
+            std::cout << " ";
+            out_tmp[codelength++] = (prefix_code)&0xFFF;
             break;
         }
         next_char = s1[i + 1];
@@ -527,7 +524,7 @@ out_tmp[codelength++] = (prefix_code)&0xFFF;
         {
             prefix_code = code;
         }
-        i += 1;
+        // i += 1;
     }
     int k =0;
     cout<<"...............Code length "<<codelength<<endl;
@@ -545,13 +542,13 @@ out_tmp[codelength++] = (prefix_code)&0xFFF;
       else // Odd
       {
       /*Change the endianness of output code*/
-  char data1 = (out_tmp[i] & 0x0ff0) >> 4;
+      char data1 = (out_tmp[i] & 0x0ff0) >> 4;
       char data2 = (out_tmp[i] & 0x000f) << 4;
-  out_tmp[i] = (data2<<8)|(data1);
-  if(!(i & 0x01)) // Even
+      out_tmp[i] = (data2<<8)|(data1);
+      if(!(i & 0x01)) // Even
       {           /*lower 8-bits of 1st code*/
-  output_code[k++] =(out_tmp[i] & 0xFF);
-  output_code[k] = ((out_tmp[i] & 0xFF00)>>8);
+            output_code[k++] =(out_tmp[i] & 0xFF);
+            output_code[k] = ((out_tmp[i] & 0xFF00)>>8);
       }
       else // Odd
       {
