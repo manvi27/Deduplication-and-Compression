@@ -22,12 +22,9 @@
 #define pipe_depth 4
 #define DONE_BIT_L (1 << 7)
 #define DONE_BIT_H (1 << 15)
-#define usr_code
 using namespace std;
 // int offset = 0;
 // unsigned char* file;
-
-#ifdef usr_code
 
 #define WIN_SIZE 16
 #define PRIME 3
@@ -37,104 +34,7 @@ using namespace std;
 uint32_t powArr[WIN_SIZE] = {1,3,9,27,81,243,729,2187,6561,19683,59049,177147,531441,1594323,4782969,14348907};
 
 std::unordered_map <string, int> dedupTable;
-// uint64_t hash_func(string input, unsigned int pos)
-// {
-// 	// put your hash function implementation here
-//     uint64_t hash = 0;
-// 	uint8_t i = 0;
 
-// 	for(i = 0; i < WIN_SIZE; i++)
-// 	{
-// 		// hash += input[pos+WIN_SIZE-1-i]*(pow(PRIME,i+1));powArr
-//         hash += input[pos+WIN_SIZE-1-i]*(powArr[i]);
-// 	}
-// 	return hash;
-// }
-// void XXH3_accumulate_512_neon(void* XXH_RESTRICT acc, const void* XXH_RESTRICT input, const void* XXH_RESTRICT secret);
-
-uint64_t hash_func1(string input, unsigned int pos)
-{
-
-const char *p = input.c_str();
-uint32_t arr1[16] =  {1,3,9,27,81,243,729,2187,6561,19683,59049,177147,531441,1594323,4782969,14348907};
-uint32_t result[16];
-// uint32x4_t vec1_0 = vld1q_u32((const uint32_t*)p);
-// uint32x4_t vec2_0 = vld1q_u32(arr1);
-// uint32x4_t vec3_0 = vmulq_u32(vec1_0, vec2_0);
-// vst1q_u32(result, vec3_0);
-// uint32x4_t vec1_1 = vld1q_u32((const uint32_t*)p+4);
-// uint32x4_t vec2_1 = vld1q_u32(arr1+4);
-// uint32x4_t vec3_1 = vmulq_u32(vec1_1, vec2_1);
-// vst1q_u32(result+4, vec3_1);
-// uint32x4_t vec1_2 = vld1q_u32((const uint32_t*)p+8);
-// uint32x4_t vec2_2 = vld1q_u32(arr1+8);
-// uint32x4_t vec3_2 = vmulq_u32(vec1_2, vec2_2);
-// vst1q_u32(result+8, vec3_2);
-// uint32x4_t vec1_3 = vld1q_u32((const uint32_t*)p+12);
-// uint32x4_t vec2_3 = vld1q_u32(arr1+12);
-// uint32x4_t vec3_3 = vmulq_u32(vec1_3, vec2_3);
-// vst1q_u32(result+12, vec3_3);
-
-uint64_t hash = 0;
-for(int i =0; i<16;++i) {
-    // cout<<".................result : "<<result[i]<<endl;
-    hash+=result[i];
-}
-    return hash;
-}
-
-uint64_t HashCDC = 0;
-#if 1
-uint64_t hash_func(string input, unsigned int pos)
-{
-	// put your hash function implementation here
-
-    uint64_t hash = 0;
-    hash += input[pos+WIN_SIZE-1]*1;
-    hash += input[pos+WIN_SIZE-2]*3;
-    hash += input[pos+WIN_SIZE-3]*9;
-    hash += input[pos+WIN_SIZE-4]*27;
-    hash += input[pos+WIN_SIZE-5]*81;
-    hash += input[pos+WIN_SIZE-6]*243;
-    hash += input[pos+WIN_SIZE-7]*729;
-    hash += input[pos+WIN_SIZE-8]*2187;
-    hash += input[pos+WIN_SIZE-9]*6561;
-    hash += input[pos+WIN_SIZE-10]*19683;
-    hash += input[pos+WIN_SIZE-11]*59049;
-    hash += input[pos+WIN_SIZE-12]*177147;
-    hash += input[pos+WIN_SIZE-13]*531441;
-    hash += input[pos+WIN_SIZE-14]*1594323;
-    hash += input[pos+WIN_SIZE-15]*4782969;
-    hash += input[pos+WIN_SIZE-16]*14348907;
-	// std::cout << "............HASH : " << hash << std::endl;
-    return hash;
-}
-#endif
-uint64_t Hashprologue(string input) {
-    //i = WIN_SIZE
-    //i + WINSIZE = 32
-    uint64_t hash = 0;
-    hash += input[32-1];
-    hash += input[32-2]*3;
-    hash += input[32-3]*9;
-    hash += input[32-4]*27;
-    hash += input[32-5]*81;
-    hash += input[32-6]*243;
-    hash += input[32-7]*729;
-    hash += input[32-8]*2187;
-    hash += input[32-9]*6561;
-    hash += input[32-10]*19683;
-    hash += input[32-11]*59049;
-    hash += input[32-12]*177147;
-    hash += input[32-13]*531441;
-    hash += input[32-14]*1594323;
-    hash += input[32-15]*4782969;
-    hash += input[32-16]*14348907;
-
-    HashCDC = hash;
-
-    return hash;
-}
 #define FIXED_CHUNKING 1
 void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_size)
 {
@@ -263,24 +163,33 @@ void Swencoding(string s1,vector <char> &output)
 // try  uncommenting the line above and commenting line 6 to make the hash table smaller
 // and see what happens to the number of entries in the assoc mem
 // (make sure to also comment line 27 and uncomment line 28)
-
-unsigned int my_hash(unsigned long key)
+#if 1
+unsigned int my_hash(unsigned int key)
 {
-    key &= 0xFFFFF; // make sure the key is only 20 bits
-
-    unsigned int hashed = 0;
-
-    for(int i = 0; i < 20; i++)
-    {
-        hashed += (key >> i)&0x01;
-        hashed += hashed << 10;
-        hashed ^= hashed >> 6;
-    }
-    hashed += hashed << 3;
-    hashed ^= hashed >> 11;
-    hashed += hashed << 15;
-    return hashed & 0x7FFF;          // hash output is 15 bits
+//    key &= 0xFFFFF; // make sure the key is only 20 bits
+//
+//    unsigned int hashed = 0;
+//
+//    for(int i = 0; i < 20; i++)
+//    {
+//        hashed += (key >> i)&0x01;
+//        hashed += hashed << 10;
+//        hashed ^= hashed >> 6;
+//    }
+//    hashed += hashed << 3;
+//    hashed ^= hashed >> 11;
+//    hashed += hashed << 15;
+//    return hashed & 0x7FFF;          // hash output is 15 bits
     //return hashed & 0xFFF;
+	unsigned int hash = 5381;
+	int c = key;
+    key = key>>1;
+	while (c) {
+		hash = ((hash << 5) + hash) + c;
+		c = key;
+        key = key>>1;
+	}
+	return hash/* % table->size*/;
 }
 
 void hash_lookup(unsigned long (&hash_table)[CAPACITY/BUCKET_SIZE][BUCKET_SIZE], unsigned int key, bool* hit, unsigned int* result)
@@ -578,7 +487,7 @@ output_code[k++] |= ((out_tmp[i] >> 12) & 0x000F);
 
 
 
-#endif
+//#endif
 
 void handle_input(int argc, char* argv[], char** filename,int* blocksize) {
 	int x;
@@ -600,3 +509,252 @@ void handle_input(int argc, char* argv[], char** filename,int* blocksize) {
 		}
 	}
 }
+
+#else
+
+typedef struct table_entry {
+    char* key;
+    uint16_t value;
+    struct table_entry* next;
+} table_entry;
+
+typedef struct hash_table {
+    int size;
+    struct table_entry** table;
+} hash_table;
+
+int hash_func2(hash_table* table, char* key);
+hash_table* create_table(int table_size);
+void put(hash_table* table, char* key, uint16_t value);
+uint16_t get(hash_table* table, char* key);
+int num_entries(hash_table* table);
+void print_table(hash_table* table);
+void delete_table(hash_table* table);
+void run_LZW (char *s1, int length, char *output_code, int output_code_len);
+
+hash_table* create_table(int table_size) {
+    hash_table* table = (hash_table*) malloc(sizeof(hash_table));
+    table->size = table_size;
+    table->table = (table_entry**) malloc(sizeof(table_entry*) * table_size);
+    int i;
+    for (i = 0; i < table_size; i++) {
+        (table->table)[i] = NULL;
+    }
+    return table;
+}
+
+// This hash function uses "djb2". See the link below.
+// http://www.cse.yorku.ca/~oz/hash.html
+int hash_func2(hash_table* table, char* key) {
+    unsigned long hash = 5381;
+    int c = *key++;
+    while (c) {
+        hash = ((hash << 5) + hash) + c;
+        c = *key++;
+    }
+    return hash % table->size;
+}
+
+void put(hash_table* table, char* key, uint16_t value) {
+    int hash = hash_func2(table, key);
+
+    // Create a new node
+    table_entry* new_entry = (table_entry*) malloc(sizeof(table_entry));
+    new_entry->key = (char*) malloc(sizeof(char) * (strlen(key) + 1));
+    strcpy(new_entry->key, key);
+    new_entry->value = value;
+    new_entry->next = NULL;
+    
+    table_entry* ptr = (table->table)[hash];
+    if (ptr == NULL) {
+        (table->table)[hash] = new_entry;
+    } else {
+        while (ptr->next != NULL) {
+            ptr = ptr->next;
+        }
+        ptr->next = new_entry;
+    }
+}
+
+// Returns the value associated with the key, or
+// -1 to indicate that the value was not found.
+uint16_t get(hash_table* table, char* key) {
+    int hash = hash_func2(table, key);
+
+    table_entry* ptr = (table->table)[hash];
+    if (ptr != NULL) {
+        while (ptr != NULL) {
+            if (strcmp(ptr->key, key) == 0) {
+                return ptr->value;
+            }
+            ptr = ptr->next;
+        }
+    }
+    return -1;
+}
+
+int num_entries(hash_table* table) {
+    int n = 0;
+    int i;
+    for (i = 0; i < table->size; i++) {
+        table_entry* ptr = (table->table)[i];
+        while (ptr != NULL) {
+            n++;
+            ptr = ptr->next;
+        }
+    }
+    return n;
+}
+
+// For debugging purposes
+void print_table(hash_table* table) {
+    printf("Number of buckets: %d\n", table->size);
+    int i;
+    for (i = 0; i < table->size; i++) {
+        printf("Bucket #%d:\n", i);
+        table_entry* ptr = (table->table)[i];
+        while (ptr != NULL) {
+            printf("%s => %d\n", ptr->key, ptr->value);
+            ptr = ptr->next;
+        }
+    }
+    printf("END OF HASH TABLE\n");
+}
+
+void delete_table(hash_table* table) {
+    int i;
+    for (i = 0; i < table->size; i++) {
+        table_entry* ptr = (table->table)[i];
+        while (ptr != NULL) {
+            table_entry* next = ptr->next;
+            free(ptr->key);
+            free(ptr);
+            ptr = next;
+        }
+    }
+    free(table->table);
+    free(table);
+}
+
+int output_code1 (int code, unsigned char state, char* output, int* output_ptr) {
+    code = code & 0x1FFF;
+    switch (state) {
+        case 0:
+            // Output: 8 | 5 _ _ _
+            code = code << 3;
+            output[(*output_ptr)++] = (unsigned char) ((code >> 8) & 0xFF);
+            output[(*output_ptr)++] = (unsigned char) (code & 0xFF);
+            state = 1;
+            break;
+        case 1:
+            // Output: _ _ _ _ _ 3 | 8 | 2 _ _ _ _ _ _
+            code = code << 6;
+            output[(*output_ptr) - 1] = (unsigned char) (output[(*output_ptr) - 1] | ((code >> 16) & 0x07));
+            output[(*output_ptr)++] = (unsigned char) ((code >> 8) & 0xFF);
+            output[(*output_ptr)++] = (unsigned char) (code & 0xFF);
+            state = 2;
+            break;
+        case 2:
+            // Output: _ _ 6 | 7 _
+            code = code << 1;
+            output[(*output_ptr) - 1] = (unsigned char) (output[(*output_ptr) - 1] | ((code >> 8) & 0x3F));
+            output[(*output_ptr)++] = (unsigned char) (code & 0xFF);
+            state = 3;
+            break;
+        case 3:
+            // Output: _ _ _ _ _ _ _ 1 | 8 | 4 _ _ _ _
+            code = code << 4;
+            output[(*output_ptr) - 1] = (unsigned char) (output[(*output_ptr) - 1] | ((code >> 16) & 0x01));
+            output[(*output_ptr)++] = (unsigned char) ((code >> 8) & 0xFF);
+            output[(*output_ptr)++] = (unsigned char) (code & 0xFF);
+            state = 4;
+            break;
+        case 4:
+            // Output: _ _ _ _ 4 | 8 | 1 _ _ _ _ _ _ _
+            code = code << 7;
+            output[(*output_ptr) - 1] = (unsigned char) (output[(*output_ptr) - 1] | ((code >> 16) & 0x0F));
+            output[(*output_ptr)++] = (unsigned char) ((code >> 8) & 0xFF);
+            output[(*output_ptr)++] = (unsigned char) (code & 0xFF);
+            state = 5;
+            break;
+        case 5:
+            // Output: _ 7 | 6 _ _
+            code = code << 2;
+            output[(*output_ptr) - 1] = (unsigned char) (output[(*output_ptr) - 1] | ((code >> 8) & 0x7F));
+            output[(*output_ptr)++] = (unsigned char) (code & 0xFF);
+            state = 6;
+            break;
+        case 6:
+            // Output: _ _ _ _ _ _ 2 | 8 | 3 _ _ _ _ _
+            code = code << 5;
+            output[(*output_ptr) - 1] = (unsigned char) (output[(*output_ptr) - 1] | ((code >> 16) & 0x03));
+            output[(*output_ptr)++] = (unsigned char) ((code >> 8) & 0xFF);
+            output[(*output_ptr)++] = (unsigned char) (code & 0xFF);
+            state = 7;
+            break;
+        case 7:
+            // Output: _ 5 | 8
+            output[(*output_ptr) - 1] = (unsigned char) (output[(*output_ptr) - 1] | ((code >> 8) & 0x1F));
+            output[(*output_ptr)++] = (unsigned char) (code & 0xFF);
+            state = 0;
+            break;
+        default:
+            printf("ERROR IN STATE\n");
+            return -1;
+    }
+    return state;
+}
+
+void encoding (char * s1, int length, char *output_code, int output_code_len) {
+    hash_table* dict = create_table(4096);
+    int num;
+    int index;
+
+    // Insert the first 256 entries into the dictionary
+    for (num = 0; num < 256; num++) {
+        put(dict, (char*) &num, num);
+    }
+
+    // Setup memory for string processing
+    char* curr_str = (char*) malloc(sizeof(char) * length);
+
+    curr_str[0] = s1[0];
+    curr_str[1] = '\0';
+    char* temp_str = (char*) malloc(sizeof(char) * length);
+
+    unsigned char state = 0;
+
+    // Compress the input chunk
+    for (index = 0; index < length - 1; index++) {
+        char next_char[2];
+        next_char[0] = s1[index + 1];
+        next_char[1] = '\0';
+        strcpy(temp_str, curr_str);
+        strcat(temp_str, next_char);
+        if (get(dict, temp_str) != (uint16_t) -1) {
+            strcpy(curr_str, temp_str);
+        } else {
+            // Output the code for curr_str
+            int code = get(dict, curr_str);
+            state = output_code1(code, state, output_code, &output_code_len);
+
+            // Insert the new string into the dictionary
+            put(dict, temp_str, num++);
+            strcpy(curr_str, next_char);
+        }
+    }
+
+    // Output the last code, if necessary
+    if (strlen(curr_str) > 0) {
+        int code = get(dict, curr_str);
+        output_code1(code, state, output_code, &output_code_len);
+    }
+    
+    // Clean up allocated memory
+    free(curr_str);
+    free(temp_str);
+    delete_table(dict);
+    // return output_code_len;
+    return;
+}
+#endif

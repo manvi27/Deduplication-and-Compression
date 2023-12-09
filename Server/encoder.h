@@ -34,6 +34,6 @@ void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_siz
 void encoding(const char* s1, char *output_code);
 #else
 void cdc(vector<unsigned int> &ChunkBoundary, string buff, unsigned int buff_size);
-void encoding(const char* s1, int length, char *output_code,unsigned int *output_code_len);
+void encoding(char* s1, int length, char *output_code,unsigned int *output_code_len);
 #endif
 #endif
