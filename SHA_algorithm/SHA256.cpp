@@ -172,10 +172,10 @@ int main(int argc, char* argv[])
 }
 
 #endif
-
+int SHACount = 0;
 int runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length)
 {
-	
+	SHACount++;
     SHA256_CTX ctx;
     unsigned char hashData[32];
     const unsigned char *str = (unsigned char*)data.c_str();
@@ -188,14 +188,14 @@ int runSHA(unordered_map <string, int> &dedupTable, string data, uint32_t length
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     };
 // printf("SHAPoint0");
-	// sha256_process(state, data, length);
+	sha256_process(state, data, length);
 	
-	// for(size_t i = 0; i < 8; ++i) {
-	// 	hashData[4*i + 0] = (char) (state[i] >> 24);
-	// 	hashData[4*i+1] = (char) (state[i] >> 16);
-	// 	hashData[4*i+2] = (char) (state[i] >> 8);
-	// 	hashData[4*i+3] = (char) (state[i] >> 0);
-	// }
+	for(size_t i = 0; i < 8; ++i) {
+		hashData[4*i + 0] = (char) (state[i] >> 24);
+		hashData[4*i+1] = (char) (state[i] >> 16);
+		hashData[4*i+2] = (char) (state[i] >> 8);
+		hashData[4*i+3] = (char) (state[i] >> 0);
+	}
 // printf("SHAPoint2");
 string xyz = "";
      cout <<endl<< "SHA:";
@@ -205,16 +205,18 @@ string xyz = "";
        printf("0x%02X ", hashData[i]);
         
     }
+    cout <<endl<<endl<<"SHA : SHACount : "<<SHACount<<endl;
     //printf("%X\n",xyz);
 	//std::unordered_map <std::string, int> dedupTable;
     ChunkId = checkDedup(xyz, dedupTable, TableSize);
 	if(ChunkId < 0)
 	{
-        // printf("SHAPoint4");
+        printf("SHAPoint4\n\n");
 		TableSize++;
 		// cout<<"Added chunck to table!!!!!";
         return -1;
 	}
+    printf("SHAPoint5\n\n");
     // printf("Dedup table.size - %ld\n", dedupTable.size());
 
 	return ChunkId;
