@@ -280,8 +280,7 @@ unsigned int my_hash(unsigned long key)
     // hashed ^= hashed >> 11;
     // hashed += hashed << 15;
     // return hashed & 0x7FFF;          // hash output is 15 bits
-
-    unsigned int hash = 5381;
+    unsigned int hash = 0;
 	int c = key;
     key = key>>1;
 	//for (int i = 0; i < 19;i++) {
@@ -291,7 +290,7 @@ unsigned int my_hash(unsigned long key)
 		c = key;
         key = key>>1;
 	}
-	return hash/* % table->size*/;
+	return hash&0x7FFF/* % table->size*/;
     //return hashed & 0xFFF;
 }
 
@@ -327,6 +326,7 @@ void hash_lookup(unsigned long (&hash_table)[CAPACITY/BUCKET_SIZE][BUCKET_SIZE],
     //         //std::cout << "\tmissed the hash" << std::endl;
     //     }
     // }
+
     *hit = false;
     *result = 0;
     if((((hash_table[hash][0] >> (20 + 12))&BUCKET_LIMIT)) && (key == (hash_table[hash][0]&0xFFFFF)))
@@ -355,22 +355,41 @@ void hash_insert(unsigned long (&hash_table)[CAPACITY/BUCKET_SIZE][BUCKET_SIZE],
     {
         lookup = hash_table[hash][i];
         valid = (lookup >> (20 + 12))&BUCKET_LIMIT; /*read last 2-bits: if 01 - entry 0 else entry 1*/
+        //cout<<".....Valid "<<valid<<endl;
         if(valid == 1<<i)
         {
+            // cout<<"avbnnm "<<i <<Bucketfill<<endl;
             Bucketfill++;
         }
+        // printf("value checked before insertion = %lX. Bucketfill = %d valid = %x\n",hash_table[my_hash(key)][Bucketfill],Bucketfill,valid);
+        //printf("value checked before insertion = 0x%lX... Bucketfill = %d valid = %x\n",lookup,Bucketfill,valid);
     }
    
     if(Bucketfill >= BUCKET_SIZE)
     {
         *collision = true;
+        // printf("\nCollision\n");
     }
     else
     {
         hash_table[hash][Bucketfill] = (1UL << (20 + 12 + (Bucketfill))) | (value << 20) | key;
+        // printf("value checked after insertion = %lX. Bucketfill = %d valid = %x...myhashkey - %lX\n",hash_table[my_hash(key)][Bucketfill],Bucketfill,valid,my_hash(key));
+        // cout<<"value inserted before insertion"<<hash_table[my_hash(key)][Bucketfill]<<"Bucketfill"<<Bucketfill<<endl;
         *collision = false;
     }
    
+    /*if(valid)
+    {
+        *collision = 1;
+        //std::cout << "\tcollision in the hash" << std::endl;
+    }
+    else
+    {
+        hash_table[my_hash(key)] = (1UL << (20 + 12)) | (value << 20) | key;
+        *collision = 0;
+        //std::cout << "\tinserted into the hash table" << std::endl;
+        //std::cout << "\t(k,v,h) = " << key << " " << value << " " << my_hash(key) << std::endl;
+    }*/
 }
 //****************************************************************************************************************
 typedef struct
@@ -391,6 +410,7 @@ typedef struct
 
 void assoc_insert(assoc_mem* mem,  unsigned int key, unsigned int value, bool* collision)
 {
+    //std::cout << "assoc_insert():" << std::endl;
     key &= 0xFFFFF; // make sure key is only 20 bits
     value &= 0xFFF;   // value is only 12 bits
 
@@ -402,10 +422,14 @@ void assoc_insert(assoc_mem* mem,  unsigned int key, unsigned int value, bool* c
         mem->value[mem->fill] = value;
         mem->fill++;
         *collision = false;
+        //std::cout << "\tinserted into the assoc mem" << std::endl;
+        //std::cout << "\t(k,v) = " << key << " " << value << std::endl;
     }
     else
     {
         *collision = true;
+       
+        //std::cout << "\tcollision in the assoc mem" << std::endl;
     }
 }
 
@@ -426,19 +450,23 @@ void assoc_lookup(assoc_mem* mem, unsigned int key, bool* hit, unsigned int* res
     {
         if((match >> address) & 0x1)
         {
-            *result = mem->value[address];
+             *result = mem->value[address];
             *hit = 1;
             break;
         }
     }
+    
     // if(address != 64)
     // {
     //     *result = mem->value[address];
     //     *hit = 1;
+    //     //std::cout << "\thit the assoc" << std::endl;
+    //     //std::cout << "\t(k,v) = " << key << " " << *result << std::endl;
     // }
     // else
     // {
     //     *hit = 0;
+    //     //std::cout << "\tmissed the assoc" << std::endl;
     // }
 }
 //****************************************************************************************************************
@@ -460,9 +488,8 @@ void lookup(unsigned long (&hash_table)[CAPACITY/BUCKET_SIZE][BUCKET_SIZE], asso
     }
 }
 //****************************************************************************************************************
-void encoding(unsigned char* s1,int length,unsigned char *output_code,unsigned int *output_code_len)
+void encoding(unsigned  char* s1,int length,unsigned char *output_code,unsigned int *output_code_len)
 {
-
     // create hash table and assoc mem
     unsigned long hash_table[CAPACITY/BUCKET_SIZE][BUCKET_SIZE];
     assoc_mem my_assoc_mem;
@@ -478,25 +505,35 @@ void encoding(unsigned char* s1,int length,unsigned char *output_code,unsigned i
         my_assoc_mem.middle_key_mem[i] = 0;
         my_assoc_mem.lower_key_mem[i] = 0;
     }
+
     int next_code = 256;
+
+
     unsigned int prefix_code = (unsigned char)s1[0];
     unsigned int code = 0;
     unsigned char next_char = 0;
-    int codelength = 0; /*length of lzw code*/   
-    for(int i = 0;i < length;i++)
+    int codelength = 0; /*length of lzw code*/
+    int i = 0;
+    for(i = 0;i < length;i++)
     {
         if(i + 1 == length)
         {
-            out_tmp[codelength++] = (prefix_code)&0xFFF;
+             std::cout << prefix_code;
+             std::cout << " ";
+out_tmp[codelength++] = (prefix_code)&0xFFF;
             break;
         }
-        next_char = s1[i + 1];      
+        next_char = s1[i + 1];
 
         bool hit = 0;
+        //std::cout << "prefix_code " << prefix_code << " next_char " << next_char << std::endl;
         lookup(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, &hit, &code);
         if(!hit)
         {
             out_tmp[codelength++] = prefix_code&0xFFF;
+            std::cout << prefix_code;
+            std::cout << " ";
+
             bool collision = 0;
             insert(hash_table, &my_assoc_mem, (prefix_code << 8) + next_char, next_code, &collision);
 
@@ -516,32 +553,35 @@ void encoding(unsigned char* s1,int length,unsigned char *output_code,unsigned i
         // i += 1;
     }
     int k =0;
-    // cout<<"...............Code length "<<codelength<<endl;
+    cout<<"...............Code length "<<codelength<<endl;
     for(int i =0;i< codelength;i++)
     {
       /*Change the endianness of output code*/
-       char data1 = (out_tmp[i] & 0x0ff0) >> 4;
-       char data2 = (out_tmp[i] & 0x000f) << 4;
-       out_tmp[i] = (data2<<8)|(data1);
-       if(!(i & 0x01)) // Even
-       {           /*lower 8-bits of 1st code*/
-            output_code[k++] =(out_tmp[i] & 0xFF);
-            output_code[k] = ((out_tmp[i] & 0xFF00)>>8);
-        }
-        else // Odd
-        {
+  char data1 = (out_tmp[i] & 0x0ff0) >> 4;
+      char data2 = (out_tmp[i] & 0x000f) << 4;
+  out_tmp[i] = (data2<<8)|(data1);
+  if(!(i & 0x01)) // Even
+      {           /*lower 8-bits of 1st code*/
+  output_code[k++] =(out_tmp[i] & 0xFF);
+  output_code[k] = ((out_tmp[i] & 0xFF00)>>8);
+      }
+      else // Odd
+      {
             output_code[k++] |= ((out_tmp[i] & 0x00F0)>>4);
-            output_code[k] = (out_tmp[i]<<4);
-            output_code[k++] |= ((out_tmp[i] >> 12) & 0x000F);
-        }
+output_code[k] = (out_tmp[i]<<4);
+output_code[k++] |= ((out_tmp[i] >> 12) & 0x000F);
+      }
 
     }
     *output_code_len = (codelength % 2 != 0) ? ((codelength/2)*3) + 2 : ((codelength/2)*3);
+    // *output_code_len = k;
+    // if(codelength % 2 != 0)
+    // {
+    //     output_code[++k] = 0;
+    // }
+    cout<<"output code length"<<*output_code_len<<" entries in lzw code "<<k<<endl;
+    std::cout << std::endl << "assoc mem entry count: " << my_assoc_mem.fill << std::endl;
 }
-
-
-
-
 #endif
 
 void handle_input(int argc, char* argv[], char** filename,int* blocksize) {

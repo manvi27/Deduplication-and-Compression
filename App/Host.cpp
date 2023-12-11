@@ -39,7 +39,7 @@ unsigned char* file;
 
 #define WIN_SIZE 16
 #define PRIME 3
-#define MODULUS 4096
+#define MODULUS 256
 #define TARGET 0
 
 
@@ -51,7 +51,7 @@ int offset = 0;
 int header;//header for writing back to file 
 int TotalChunksCount = 0;
 vector <int> DuplicateChunkId;/*used to store status corresponding to each chunk(unqiue + duplicate)*/
-vector <int> ChunkstatusId(1000);/*Used to store status of all chunks*/
+vector <int> ChunkstatusId;/*Used to store status of all chunks*/
 int ChunksCount = 0;/* chunk count for given buffer processed by cdc at a given time*/
 unsigned int UniqueChunkLength[100];/*Used to store unique chunk length to be passed to lzw function*/
 thread core_2_thread;/*thread for LZW executed on core2*/
@@ -69,6 +69,7 @@ void core_2_process(vector<cl::Kernel> kernel,cl::CommandQueue q,string input,un
 	stopwatch time_lzw;
 	stopwatch timeIntermediate;
 	time.start();
+	
 	while(!lzw_done)
 	{		
 		if(i < ChunksCount-1)
@@ -77,7 +78,9 @@ void core_2_process(vector<cl::Kernel> kernel,cl::CommandQueue q,string input,un
 			cout<<"\nBoundaries: "<<ChunkBoundary[i]<<".."<<ChunkBoundary[i+1]<<"for chunk id"<<i<<endl;
 			timeIntermediate.start();
 			DuplicateChunkId[i] = runSHA(dedupTable1,input.substr(ChunkBoundary[i],ChunkBoundary[i+1]-ChunkBoundary[i]) , ChunkBoundary[i+1]-ChunkBoundary[i]);
+			ChunkstatusId.push_back(DuplicateChunkId[i]);
 			cout<<"\nDuplicate chunk id = "<<DuplicateChunkId[i]<<"Unique id "<<UniqueId<<endl;
+			TotalChunksCount++;
 			timeIntermediate.stop();
 			if(DuplicateChunkId[i] == -1)
 			{
@@ -96,6 +99,7 @@ void core_2_process(vector<cl::Kernel> kernel,cl::CommandQueue q,string input,un
 			
 			if((UniqueId%num_cu == 0) && (UniqueId > 0))
 			{
+				cout<<"Total chunks count = "<<TotalChunksCount<<endl;
 				std::vector<cl::Event> write_event(100);
 				std::vector<cl::Event> compute_event(100);
 				std::vector<cl::Event> done_event(100);
@@ -123,8 +127,33 @@ void core_2_process(vector<cl::Kernel> kernel,cl::CommandQueue q,string input,un
 				for (int cu_idx = 0; cu_idx < num_cu; cu_idx++) 
 				{
 					done_event[cu_idx].wait();
+					cout<<"output chunk length"<<*outputChunk_len[cu_idx]<<endl;
 				}
-
+				unsigned char kernel_idx = 0;
+				cout<<"Total chunks count = "<<TotalChunksCount<<endl;
+				
+				while(ChunkWrItr < TotalChunksCount)
+				{
+					cout<<"Chunks iteration"<<ChunkWrItr<<"Kernel id"<<kernel_idx<<"output chunk length"<<(*outputChunk_len[kernel_idx])<<endl;
+					if(-1 == ChunkstatusId[ChunkWrItr])
+					{
+						cout<<"Unique chunk write"<<endl;
+						header = ((*outputChunk_len[kernel_idx])<<1);
+						memcpy(&file[offset], &header, sizeof(header));
+						offset += sizeof(header);
+						memcpy(&file[offset], outputChunk[kernel_idx], *outputChunk_len[kernel_idx]);
+						offset += *outputChunk_len[kernel_idx];
+						kernel_idx = (kernel_idx+1)%num_cu;
+					}
+					else
+					{
+						cout<<"Duplicate chunk"<<ChunkstatusId[ChunkWrItr]<<endl;
+						header = (((ChunkstatusId[ChunkWrItr])<<1) | 1);
+						memcpy(&file[offset], &header, sizeof(header));
+						offset +=  sizeof(header);
+					}
+					ChunkWrItr++;
+				}
 				time_lzw.stop();
 				UniqueId = 0;
 				
@@ -145,7 +174,7 @@ void core_2_process(vector<cl::Kernel> kernel,cl::CommandQueue q,string input,un
 				std::vector<std::vector<cl::Event>> write_list(100);
 				std::vector<std::vector<cl::Event>> compute_list(100);
 				std::vector<std::vector<cl::Event>> done_list(100);
-
+				unsigned char kernel_idx = 0;
 				time_lzw.start();
 				/*Running 4 chunks*/
 				for(int cu_idx = 0; cu_idx < (UniqueId); cu_idx++)
@@ -165,6 +194,28 @@ void core_2_process(vector<cl::Kernel> kernel,cl::CommandQueue q,string input,un
 				{
 					done_event[cu_idx].wait();
 				}
+
+				while(ChunkWrItr < (TotalChunksCount - 1))
+				{
+					cout<<"Chunks iteration"<<ChunkWrItr<<"Kernel id"<<kernel_idx<<"Duplicate chunk id"<<ChunkstatusId[ChunkWrItr]<<endl;
+					if(-1 == ChunkstatusId[ChunkWrItr])
+					{
+						header = ((*outputChunk_len[kernel_idx])<<1);
+						memcpy(&file[offset], &header, sizeof(header));
+						offset += sizeof(header);
+						memcpy(&file[offset], outputChunk[kernel_idx], *outputChunk_len[kernel_idx]);
+						offset += *outputChunk_len[kernel_idx];
+						kernel_idx = (kernel_idx+1)%num_cu;
+					}
+					else
+					{
+						header = (((ChunkstatusId[ChunkWrItr])<<1) | 1);
+						memcpy(&file[offset], &header, sizeof(header));
+						offset +=  sizeof(header);
+					}
+					ChunkWrItr++;
+				}
+
 				time_lzw.stop();
 			}
 			i = 0;
@@ -212,8 +263,8 @@ vector<cl::Kernel> kernel,cl::CommandQueue q)
 			// printf("chunk boundary at%ld with length %d\n",i -1 ,i -prevBoundary);
 			/*Push an initial value to vector storing status of current chunk:unique(1) or duplicate(0) or not verified(-1)*/
 			DuplicateChunkId.push_back(-1);/*Used for deciding whether to compute lzw*/
-			ChunkstatusId[TotalChunksCount++] = -1;/*Used for writing back to file*/
 			ChunkBoundary[(ChunksCount)++] = i - 1;
+			
 			if(!Chunk_start)
 			{
 				/*Call to Core 2 thread for LZW calculation as soon as first chunk is defined*/
@@ -229,6 +280,7 @@ vector<cl::Kernel> kernel,cl::CommandQueue q)
 	{
 		DuplicateChunkId.push_back(-1);
 		ChunkBoundary[(ChunksCount)++] = buff_size;
+		TotalChunksCount++;
 	}
 	time.stop();	
 	cout<<"time taken by core 0 : CDC"<<time.latency()/1000<<endl;
