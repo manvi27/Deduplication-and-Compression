@@ -17,7 +17,7 @@
 #include "Utilities.h"
 #include "EventTimer.h"
 #include "Host.h"
-#define MAX_CHUNK_SIZE 4096
+#define MAX_CHUNK_SIZE 256
 #define LZW_HW_KER
 #define NUM_PACKETS 8
 #define pipe_depth 4
@@ -28,10 +28,6 @@ auto constexpr num_cu = 4;
 
 std::unordered_map <string, int> dedupTable1;
 static std::ifstream Input;
-std::vector<cl::Event> write_event(1);
-std::vector<cl::Event> compute_event(1);
-std::vector<cl::Event> done_event(1);
-
 vector<cl::Buffer> in_buf(num_cu);
 vector<cl::Buffer> out_buf(num_cu);
 vector<cl::Buffer> out_buf_len(num_cu);
@@ -43,7 +39,7 @@ unsigned char* file;
 
 #define WIN_SIZE 16
 #define PRIME 3
-#define MODULUS 256
+#define MODULUS 4096
 #define TARGET 0
 
 
@@ -53,169 +49,132 @@ int lzw_done = 0;
 int done = 0;
 int offset = 0;
 int header;//header for writing back to file 
-
-vector <int> DuplicateChunkId;
-int ChunksCount = 0;
-void core_1_process(string input,unsigned int *ChunkBoundary)
-{
-	cout<<"core 1 getting executed"<<endl;
-	static int  i = 0;
-	stopwatch time;
-	while(!sha_done)
-	{
-		cout << "\nSHA: i="<<i<< " "<<"Chunk size"<<(ChunksCount)<<endl;
-		
-		if((i < ChunksCount-1)) 
-		{
-			cout<<ChunkBoundary[i + 1]<<" "<<ChunkBoundary[i]<<endl;
-			time.start();
-			DuplicateChunkId[i] = runSHA(dedupTable1,input.substr(ChunkBoundary[i],ChunkBoundary[i+1]-ChunkBoundary[i]) , input.length());
-			time.stop();
-			cout<<"time taken by core 1 : SHA"<<time.latency()/1000<<endl;
-			if(DuplicateChunkId[i] == -1)
-			{
-				cout<<"SHA:Chunk unique"<<" "<<i<<endl;
-			}
-			else
-			{
-				cout<<"SHA:Chunk duplicate"<<" "<<i<<endl;
-			}
-			i++;
-
-		}
-		if((cdc_done == 1) && (i >= (ChunksCount-1)))
-		{
-			// cout << "i="<<i<< " "<<"Chunk size"<<ChunkBoundary.size()<<endl;
-			i = 0;
-			sha_done = 1;
-		}
-		
-	}
-	
-	cout << "core 1 complete"<<endl;
-}
+int TotalChunksCount = 0;
+vector <int> DuplicateChunkId;/*used to store status corresponding to each chunk(unqiue + duplicate)*/
+vector <int> ChunkstatusId(1000);/*Used to store status of all chunks*/
+int ChunksCount = 0;/* chunk count for given buffer processed by cdc at a given time*/
+unsigned int UniqueChunkLength[100];/*Used to store unique chunk length to be passed to lzw function*/
+thread core_2_thread;/*thread for LZW executed on core2*/
+unsigned int primepow[WIN_SIZE] = {3,9 ,27 ,81 ,243 ,729 ,2187 ,6561 ,19683 ,59049 ,177147 ,531441 ,1594323 ,4782969 ,14348907,43046721};
 
 void core_2_process(vector<cl::Kernel> kernel,cl::CommandQueue q,string input,unsigned int *ChunkBoundary)
 {
 	cout<<"core 2 getting executed"<<endl;
 	static int  i = 0;
-	unsigned int inputChunklen[num_cu] = {0};
+	static int UniqueId = 0;
+	static int ChunkWrItr = 0;/*Used to store count of chunks for which compression data is written in file*/
+	unsigned int inputChunklen[100] = {0};
 	char *str = (char*)input.c_str();
-	unsigned int lzwChunkCount = 0;
 	stopwatch time;
+	stopwatch time_lzw;
+	stopwatch timeIntermediate;
 	time.start();
 	while(!lzw_done)
-	{
+	{		
 		if(i < ChunksCount-1)
 		{
-			lzwChunkCount++;
-			
-			cout<<"LZW: i = "<<i<<" Chunk size "<<ChunksCount<<endl;
-			inputChunklen[i%num_cu] =  ChunkBoundary[i + 1] - ChunkBoundary[i];
-			cout<<ChunkBoundary[i + 1]<<" "<<ChunkBoundary[i]<<"input chunk length = "<<inputChunklen[i%num_cu]<<endl;;
-			for(int j = 0; j < inputChunklen[i%num_cu];j++)
+			inputChunklen[i] =  ChunkBoundary[i + 1] - ChunkBoundary[i];
+			cout<<"\nBoundaries: "<<ChunkBoundary[i]<<".."<<ChunkBoundary[i+1]<<"for chunk id"<<i<<endl;
+			timeIntermediate.start();
+			DuplicateChunkId[i] = runSHA(dedupTable1,input.substr(ChunkBoundary[i],ChunkBoundary[i+1]-ChunkBoundary[i]) , ChunkBoundary[i+1]-ChunkBoundary[i]);
+			cout<<"\nDuplicate chunk id = "<<DuplicateChunkId[i]<<"Unique id "<<UniqueId<<endl;
+			timeIntermediate.stop();
+			if(DuplicateChunkId[i] == -1)
 			{
-				inputChunk[i][j] = (str + ChunkBoundary[i])[j];
-				//cout<<inputChunk[j];
+				for(int j = 0; j < inputChunklen[i];j++)
+				{
+					inputChunk[UniqueId%num_cu][j] = (str + ChunkBoundary[i])[j];
+				}
+				UniqueChunkLength[UniqueId] = inputChunklen[i];
+				UniqueId++;
+				cout<<"unique chunk"<<endl;
 			}
-			if(!(lzwChunkCount%num_cu))
+			else
 			{
-				/*set arguments and enqueue tasks*/
+				cout<<"Duplicate chunk"<<endl;
+			}
+			
+			if((UniqueId%num_cu == 0) && (UniqueId > 0))
+			{
+				std::vector<cl::Event> write_event(100);
+				std::vector<cl::Event> compute_event(100);
+				std::vector<cl::Event> done_event(100);
+				std::vector<std::vector<cl::Event>> write_list(100);
+				std::vector<std::vector<cl::Event>> compute_list(100);
+				std::vector<std::vector<cl::Event>> done_list(100);
+
+				time_lzw.start();
+			    /*Running 4 chunks*/
 				for(int cu_idx = 0; cu_idx < num_cu; cu_idx++)
 				{
+					cout<<"kernel set arg "<<cu_idx<<"Unique chunk length "<< UniqueChunkLength[cu_idx + (UniqueId/num_cu)-1]<<"for index"<<cu_idx + (UniqueId/num_cu)-1<<endl;
 					kernel[cu_idx].setArg(0, in_buf[cu_idx]);
-					kernel[cu_idx].setArg(1, inputChunklen[cu_idx]);
+					kernel[cu_idx].setArg(1, UniqueChunkLength[cu_idx + (UniqueId/num_cu)-1]);
 					kernel[cu_idx].setArg(2, out_buf[cu_idx]);
 					kernel[cu_idx].setArg(3, out_buf_len[cu_idx]);
-					q.enqueueMigrateMemObjects({in_buf[cu_idx]}, 0 /* 0 means from host, NULL, &write_event[0]*/);
- 					q.enqueueTask(kernel[cu_idx]/*, &write_event, &compute_event[0]*/);
+					q.enqueueMigrateMemObjects({in_buf[cu_idx]}, 0 /* 0 means from host*/, NULL, &write_event[cu_idx]);
+					write_list[cu_idx].push_back(write_event[cu_idx]);
+					q.enqueueTask(kernel[cu_idx], &write_list[cu_idx], &compute_event[cu_idx]);
+					compute_list[cu_idx].push_back(compute_event[cu_idx]);
+					q.enqueueMigrateMemObjects({out_buf[cu_idx], out_buf_len[cu_idx]}, CL_MIGRATE_MEM_OBJECT_HOST, &compute_list[cu_idx], &done_event[cu_idx]);
+
 				}
-				/*Wait for kernel execution*/
-				q.finish();
 				/*Migrate output produced by kernel*/
 				for (int cu_idx = 0; cu_idx < num_cu; cu_idx++) 
 				{
-					q.enqueueMigrateMemObjects({out_buf[cu_idx], out_buf_len[cu_idx]}, CL_MIGRATE_MEM_OBJECT_HOST/*, &compute_event, &done_event[0]*/);
+					done_event[cu_idx].wait();
 				}
-				q.finish();
-				/*Writing compressed data back to file*/
-				for(int cu_idx = 0; cu_idx < num_cu; cu_idx++) {
-					if(DuplicateChunkId[i - num_cu + cu_idx] == -1)
-					{
-						header = ((*outputChunk_len[cu_idx])<<1);
-						cout<<"output chunk length = "<<*outputChunk_len[cu_idx]<<endl;
-						memcpy(&file[offset], &header, sizeof(header));
-						// cout << "-------header----------"<< header<<"=="<<(int)(*((int*)&file[offset]))<<endl;
-						offset += sizeof(header);
-						// cout<<"Chuck position : "<<ChunkBoundary[j]<<" chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[j]<<" LZW size " <<payloadlen<<" Table Size : "<<TableSize<<endl;
-						memcpy(&file[offset], outputChunk[cu_idx], *outputChunk_len[cu_idx]);
-						offset += *outputChunk_len[cu_idx];
-					}
-					else
-					{
-						cout<<"LZW:Chunk duplicate"<<i<<endl;
-						header = (((DuplicateChunkId[i - num_cu + cu_idx])<<1) | 1);
-						memcpy(&file[offset], &header, sizeof(header));
-						// cout << "-------header----------"<< header<<"=="<<(int)(*((int*)&file[offset]))<<endl;
-						offset +=  sizeof(header);
-					}
-				}
+
+				time_lzw.stop();
+				UniqueId = 0;
+				
 			}
 			
-			
+			/*Update chunk iterator*/
 			i++;
 		}
-		if((cdc_done == 1) && ((i >= ChunksCount-1)))
+
+		if((cdc_done) && (i >= (ChunksCount - 1)))
 		{
-			cout<<"Lzw remaining chunks"<<lzwChunkCount<<endl;
-			/*set arguments and enqueue tasks*/
-			for(int cu_idx = 0; cu_idx < lzwChunkCount%num_cu; cu_idx++)
-			{
-				kernel[cu_idx].setArg(0, in_buf[cu_idx]);
-				kernel[cu_idx].setArg(1, inputChunklen[cu_idx]);
-				kernel[cu_idx].setArg(2, out_buf[cu_idx]);
-				kernel[cu_idx].setArg(3, out_buf_len[cu_idx]);
-				q.enqueueMigrateMemObjects({in_buf[cu_idx]}, 0 /* 0 means from host, NULL, &write_event[0]*/);
-				q.enqueueTask(kernel[cu_idx]/*, &write_event, &compute_event[0]*/);
-			}
-			/*Wait for kernel execution*/
-			q.finish();
-			/*Migrate output produced by kernel*/
-			for (int cu_idx = 0; cu_idx < lzwChunkCount%num_cu; cu_idx++) 
-			{
-				q.enqueueMigrateMemObjects({out_buf[cu_idx], out_buf_len[cu_idx]}, CL_MIGRATE_MEM_OBJECT_HOST/*, &compute_event, &done_event[0]*/);
-			}
-			q.finish();
-			/*Writing compressed data back to file*/
-			for(int cu_idx = 0; cu_idx < lzwChunkCount%num_cu; cu_idx++) {
-				cout<<"Checking duplicacy for"<<i - lzwChunkCount%num_cu + cu_idx<<endl;
-				if(DuplicateChunkId[i - lzwChunkCount%num_cu + cu_idx] == -1)
-				{
-					header = ((*outputChunk_len[cu_idx])<<1);
-					cout<<"output chunk length = "<<*outputChunk_len[cu_idx]<<endl;
-					memcpy(&file[offset], &header, sizeof(header));
-					// cout << "-------header----------"<< header<<"=="<<(int)(*((int*)&file[offset]))<<endl;
-					offset += sizeof(header);
-					// cout<<"Chuck position : "<<ChunkBoundary[j]<<" chunk size = "<<ChunkBoundary[i + 1] - ChunkBoundary[j]<<" LZW size " <<payloadlen<<" Table Size : "<<TableSize<<endl;
-					memcpy(&file[offset], outputChunk[cu_idx], *outputChunk_len[cu_idx]);
-					offset += *outputChunk_len[cu_idx];
-				}
-				else
-				{
-					cout<<"LZW:Chunk duplicate"<<i<<endl;
-					header = (((DuplicateChunkId[i - lzwChunkCount%num_cu + cu_idx])<<1) | 1);
-					memcpy(&file[offset], &header, sizeof(header));
-					// cout << "-------header----------"<< header<<"=="<<(int)(*((int*)&file[offset]))<<endl;
-					offset +=  sizeof(header);
-				}
-			}
 			lzw_done = 1;
+			if(done)
+			{
+				std::vector<cl::Event> write_event(100);
+				std::vector<cl::Event> compute_event(100);
+				std::vector<cl::Event> done_event(100);
+				std::vector<std::vector<cl::Event>> write_list(100);
+				std::vector<std::vector<cl::Event>> compute_list(100);
+				std::vector<std::vector<cl::Event>> done_list(100);
+
+				time_lzw.start();
+				/*Running 4 chunks*/
+				for(int cu_idx = 0; cu_idx < (UniqueId); cu_idx++)
+				{
+					cout<<"kernel set arg "<<cu_idx<<"for chunk length"<<UniqueChunkLength[cu_idx]<<"for index"<<cu_idx <<endl;
+					kernel[cu_idx].setArg(0, in_buf[cu_idx]);
+					kernel[cu_idx].setArg(1, UniqueChunkLength[cu_idx]);
+					kernel[cu_idx].setArg(2, out_buf[cu_idx]);
+					kernel[cu_idx].setArg(3, out_buf_len[cu_idx]);
+					q.enqueueMigrateMemObjects({in_buf[cu_idx]}, 0 /* 0 means from host*/, NULL, &write_event[cu_idx]);
+					write_list[cu_idx].push_back(write_event[cu_idx]);
+					q.enqueueTask(kernel[cu_idx], &write_list[cu_idx], &compute_event[cu_idx]);
+					compute_list[cu_idx].push_back(compute_event[cu_idx]);
+					q.enqueueMigrateMemObjects({out_buf[cu_idx], out_buf_len[cu_idx]}, CL_MIGRATE_MEM_OBJECT_HOST, &compute_list[cu_idx], &done_event[cu_idx]);
+				}
+				for(int cu_idx = 0; cu_idx < (UniqueId);cu_idx++)
+				{
+					done_event[cu_idx].wait();
+				}
+				time_lzw.stop();
+			}
 			i = 0;
 		}
 	}
+	
 	time.stop();
-	cout<<"\ntime taken by core 2 : LZW"<<time.latency()/1000<<endl;
-	cout<<"core 2 complete"<<endl;
+	cout<<"SHA execution time:"<<timeIntermediate.latency()/1000<<endl;
+	cout<<"Lzw execution time"<<time_lzw.latency()/1000<<endl;
+	cout<<"core2 execution time:"<<time.latency()/1000<<endl;
 }
 
 
@@ -226,13 +185,14 @@ vector<cl::Kernel> kernel,cl::CommandQueue q)
 	// put your cdc implementation here	
 	uint64_t i;
     uint32_t prevBoundary = ChunkBoundary[0];
-	stopwatch time;
+	stopwatch time,time_core2;
 	bool Chunk_start = 0;
 	uint64_t hash = 0;
-	time.start();	
+	time.start();
+	time_core2.start();	
 	ChunksCount = 1;/*initialize Chunks count to 1*/
-	thread core_1_thread;/*thread for SHA executed on core1*/
-	thread core_2_thread;/*thread for LZW executed on core2*/
+	// thread core_1_thread;/*thread for SHA executed on core1*/
+	
 	/*Flags to synchronize between multiple threads*/
 	cdc_done = 0;
 	sha_done = 0;
@@ -240,29 +200,30 @@ vector<cl::Kernel> kernel,cl::CommandQueue q)
 	/*Empty the vector storing chunk status for dedup for each chunk*/
 	DuplicateChunkId.clear();
 	/*Initialize hash value*/
-	hash = buff[WIN_SIZE-1]*1 + buff[ WIN_SIZE-2]*3 + buff[ WIN_SIZE-3]*9 + buff[ WIN_SIZE-4]*27 + buff[ WIN_SIZE-5]*81 + buff[ WIN_SIZE-6]*243 + buff[ WIN_SIZE-7]*729 + buff[ WIN_SIZE-8]*2187 + buff[ WIN_SIZE-9]*6561 + buff[ WIN_SIZE-10]*19683 + buff[ WIN_SIZE-11]*59049 + buff[ WIN_SIZE-12]*177147 + buff[ WIN_SIZE-13]*531441 + buff[ WIN_SIZE-14]*1594323 + buff[ WIN_SIZE-15]*4782969 + buff[ WIN_SIZE-16]*14348907;
+	for(int i = WIN_SIZE; i < 2*WIN_SIZE; i++)
+    {
+        hash += buff[i]*primepow[2*WIN_SIZE - i - 1];
+    }
 	/*Compute rolling hash and define chunk boundaries when last 12-bits are zero(for avg chunk size: 4096)*/
 	for(i = WIN_SIZE + 1; i < buff_size - WIN_SIZE; i++)
 	{
-		hash = (hash - buff[i+WIN_SIZE-17]*14348907)*3 + buff[i+WIN_SIZE-1];
-		if((hash & 0xFFF == 0) || (i - prevBoundary == 4096))
+		if((hash % MODULUS == 0) || (i - prevBoundary - 1 == 4096))
         {
-			printf("chunk boundary at%ld with length %d\n",i,i-prevBoundary);
+			// printf("chunk boundary at%ld with length %d\n",i -1 ,i -prevBoundary);
 			/*Push an initial value to vector storing status of current chunk:unique(1) or duplicate(0) or not verified(-1)*/
-			DuplicateChunkId.push_back(-1);
-			ChunkBoundary[(ChunksCount)++] = i;
+			DuplicateChunkId.push_back(-1);/*Used for deciding whether to compute lzw*/
+			ChunkstatusId[TotalChunksCount++] = -1;/*Used for writing back to file*/
+			ChunkBoundary[(ChunksCount)++] = i - 1;
 			if(!Chunk_start)
 			{
-				/*Call to Core 1 thread for SHA calculation as soon as first chunk is defined*/
-				core_1_thread = thread(&core_1_process,buff,ChunkBoundary);
-				pin_thread_to_cpu(core_1_thread,1);
 				/*Call to Core 2 thread for LZW calculation as soon as first chunk is defined*/
 				core_2_thread = thread(&core_2_process,kernel,q,buff,ChunkBoundary);
 				pin_thread_to_cpu(core_2_thread,2);
 			}
-			prevBoundary = i;
+			prevBoundary = i - 1;
 			Chunk_start = 1;
 		}
+		hash = (hash - buff[i - 1]*43046721)*3 + buff[i+WIN_SIZE-1]*3;
 	}
 	if(done)
 	{
@@ -272,10 +233,10 @@ vector<cl::Kernel> kernel,cl::CommandQueue q)
 	time.stop();	
 	cout<<"time taken by core 0 : CDC"<<time.latency()/1000<<endl;
 	cdc_done = 1; 
-	/*Wait for core 1 to finish compute*/
-	core_1_thread.join();
 	/*Wait for core 2 to finish compute*/
 	core_2_thread.join();
+	time_core2.stop();
+	cout<<"total time taken to process a buffer"<<time_core2.latency()/1000<<endl;
 }
 
 int main(int argc, char* argv[])
@@ -324,10 +285,14 @@ int main(int argc, char* argv[])
 	/*Multiple compute units declaration*/
 	std::vector<cl::Kernel> kernel_lzw(num_cu);
     cout<<"Declaring variables"<<endl;
+	kernel_lzw[0] = cl::Kernel(program, "encoding:{encoding_1}", &err);
+	kernel_lzw[1] = cl::Kernel(program, "encoding:{encoding_2}", &err);
+	kernel_lzw[2] = cl::Kernel(program, "encoding:{encoding_3}", &err);
+	kernel_lzw[3] = cl::Kernel(program, "encoding:{encoding_4}", &err);
 	for(int i = 0 ; i < num_cu; i++)
 	{
 		/*Declare the num_cu kernels for encoding */
-		kernel_lzw[i] = cl::Kernel(program, "encoding", &err);
+		// kernel_lzw[i] = cl::Kernel(program, "encoding", &err);
 		/*Define input and output buffers for kernel*/
 		in_buf[i] = cl::Buffer(context, CL_MEM_READ_ONLY, sizeof(char) * MAX_CHUNK_SIZE, NULL, &err);
 		out_buf[i] = cl::Buffer(context, CL_MEM_WRITE_ONLY, sizeof( char) * (MAX_CHUNK_SIZE *2), NULL, &err);
@@ -430,6 +395,7 @@ int main(int argc, char* argv[])
 	    q.enqueueUnmapMemObject(out_buf[i], outputChunk[i]);
     	q.enqueueUnmapMemObject(out_buf_len[i], outputChunk_len[i]);
 	}
+	// core_2_thread.join();
 	timer2.finish();
 	cout<<"Total chunks rcvd = "<< (TotalChunksrcvd - 1)<< "unique chunks rcvd = "<<dedupTable1.size()<<endl;
     cout << "-------------file---------------"<<endl<<file[0];
@@ -462,8 +428,8 @@ int main(int argc, char* argv[])
     << std::endl;
     cout<<"Time : "<<totalTime<<endl;
 
-	// std::cout << "CDC Average latency: " << cdc_timer.avg_latency()<< " ms." << " Latency : "<<cdc_timer.latency()<<std::endl;
-	// std::cout << "SHA Average latency: " << sha_timer.avg_latency()<< " ms." << " Latency : "<<sha_timer.latency()<<std::endl;
+	std::cout << "CDC Average latency: " << cdc_timer.avg_latency()<< " ms." << " Latency : "<<cdc_timer.latency()<<std::endl;
+	// stdss::cout << "SHA Average latency: " << sha_timer.avg_latency()<< " ms." << " Latency : "<<sha_timer.latency()<<std::endl;
 	// std::cout << "LZW Average latency: " << lzw_timer.avg_latency()<< " ms." << " Latency : "<<lzw_timer.latency()<<std::endl;
 	
 	return 0;
