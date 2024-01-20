@@ -440,13 +440,13 @@ void encoding(char* s1,int length,char *output_code,unsigned int *output_code_le
     for(int i =0;i< codelength;i++)
     {
       /*Change the endianness of output code*/
-  char data1 = (out_tmp[i] & 0x0ff0) >> 4;
+      char data1 = (out_tmp[i] & 0x0ff0) >> 4;
       char data2 = (out_tmp[i] & 0x000f) << 4;
-  out_tmp[i] = (data2<<8)|(data1);
-  if(!(i & 0x01)) // Even
+      out_tmp[i] = (data2<<8)|(data1);
+      if(!(i & 0x01)) // Even
       {           /*lower 8-bits of 1st code*/
-  output_code[k++] =(out_tmp[i] & 0xFF);
-  output_code[k] = ((out_tmp[i] & 0xFF00)>>8);
+            output_code[k++] =(out_tmp[i] & 0xFF);
+            output_code[k] = ((out_tmp[i] & 0xFF00)>>8);
       }
       else // Odd
       {
